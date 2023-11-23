@@ -1,0 +1,281 @@
+<input type="hidden" id="customerEmail" value="{{ customer.email }}">
+<input type="hidden" id="customerFirstname" value="{{ customer.first_name }}">
+<input type="hidden" id="customerLastname" value="{{ customer.last_name }}">
+
+<input type="hidden" name="form_type" value="product">
+<input type="hidden" id="productId" value="{{ product.id }}">
+<input type="hidden" id="productName" value="{{ product.title }}">
+<input type="hidden" id="productPrice" value="{{ product.price }}">
+<input type="hidden" id="productImage" value="{{ product.images[0] | img_url: 'master' }}">
+<input type="hidden" id="productUrl" value="{{ product.url }}">
+<input type="hidden" id="productSize" value="{{ product.variants.first.option1 }}">
+<input type="hidden" id="productVariant" value="0">
+
+<div id="notification-modal" class="modal">
+    <div id="notification-modal-dialog" style="top: 13%; left: 0; transform: unset; width: 544px">
+        <div class="flex">
+            {% if product.images.size > 0 %}
+            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+            {% endif %}
+            <div class="block px-3 relative w-full">
+                <p>
+                    <span class="font-bold">
+                        {{ product.title | escape }}
+                    </span>
+                    <span id="sizeAdd" class="font-bold"> - Size : l
+                    </span>
+                    has been added to
+                    <span id="wishlistAdd" class="font-bold">
+                        Mirza Work Outfit Wishlist
+                    </span>
+                    successfully
+
+                </p>
+                <div id="btn-close-notification-modal" class="top-0 right-0 absolute cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                        <path
+                            d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+                        </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="wishlist-modal" class="modal wishlist-modal" style="display: none;">
+    <div id="wishlist-modal-dialog">
+        <div class="flex">
+            {% if product.images.size > 0 %}
+            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+            {% endif %}
+            <div class="block px-3 relative w-full">
+                <h4 class="h4 m-0 w-90">
+                    {{ product.title | escape }}
+                </h4>
+                <p class="m-0">Size</p>
+                <select name="size" id="size" class="bg-none">
+                    {%- for p in product.variants -%}
+                    <option value="{{ p.title }}">{{ p.title }}</option>
+                    {%- endfor -%}
+                </select>
+                <div id="btn-close-modal" class="top-0 right-0 absolute cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                        <path
+                            d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+                        </svg>
+                </div>
+            </div>
+        </div>
+
+        <p>Add to Wishlist</p>
+        <div class="flex">
+            <div class="bullet rounded-full">
+                <span class="text-center w-full">MM</span>
+            </div>
+            <div class="flex align-center ml-3 w-full">
+                <div id="wishlist-container" class="select-botton-container w-full relative">
+                    <label>Wishlist</label>
+                    <button id="wishlist-activator" class="text-left bg-none no-border">No wishlist selected</button>
+                    <div class="chevron">
+                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                            <path
+                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                            </svg>
+                        <svg class="chevron-up hidden" xmlns="http://www.w3.org/2000/svg" height="1em"
+                            viewBox="0 0 512 512">
+                            <path
+                                d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z" />
+                            </svg>
+                    </div>
+                    <div class="popover w-full" id="wishlist-popover">
+                        <input type="hidden" id="wishlistId" value="">
+                        <ul id="wishlist-menu" class="action-list" role="menu">
+                            <li role="menuitem">
+                                <div id="btn-add-new-wishlist" class="btn-create-new">CREATE NEW WISHLIST</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="flex mt-3">
+            <div class="bullet rounded-full">
+                <div class="text-center w-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff">
+                        <path
+                            d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                        </svg>
+                </div>
+            </div>
+            <div class="ml-3 w-full">
+                <div id="capsule-container" class="select-botton-container w-full relative">
+                    <label>Capsule</label>
+                    <button id="capsule-activator" class="text-left bg-none no-border">No capsule selected</button>
+                    <div class="chevron">
+                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                            <path
+                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                            </svg>
+                        <svg class="chevron-up hidden" xmlns="http://www.w3.org/2000/svg" height="1em"
+                            viewBox="0 0 512 512">
+                            <path
+                                d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z" />
+                            </svg>
+                    </div>
+                    <div class="popover w-full" id="capsule-popover">
+                        <input type="hidden" id="capsuleId" value="">
+                        <ul id="capsule-menu" class="action-list" role="menu">
+                            <li role="menuitem">
+                                <div id="btn-add-new-capsule" class="btn-create-new">CREATE NEW CAPSULE</div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p class="m-0 mt-8">Add a Comment</p>
+        <input type="text" id="txtComment" class="h64px w-full" name="txtComment">
+        <button id="btn-create-wishlist" class="mt-8 text-white p-2">ADD TO WISHLIST</button>
+        <div id="loader" class="loader"></div>
+
+    </div>
+</div>
+
+<div id="add-wishlist-modal" class="modal add-wishlist" style="display: none;">
+    <div id="modal-dialog">
+        <div class="block relative px-3">
+            <h4 class="h4 m-0 w-90 title">
+                Add a New Wishlist
+            </h4>
+            <div id="close-add-wishlist" class="top-0 right-0 absolute cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                    <path
+                        d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="">
+            <label>Wishlist Name</label>
+            <input type="text" id="txtWishlist" class="h38px w-full" name="txtWishlist"
+                placeHolder="Enter wishlist name...">
+            <button id="btn-wishlist-save" class="mt-8 text-white p-2">SAVE</button>
+        </div>
+    </div>
+</div>
+
+<div id="capsule-modal" class="modal add-capsule" style="display: none;">
+    <div id="modal-dialog">
+        <div class="block relative px-3">
+            <h4 class="h4 m-0 w-90 title">
+                Add a New Capsule
+            </h4>
+            <div id="btn-close-capsule" class="top-0 right-0 absolute cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                    <path
+                        d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+                </svg>
+            </div>
+        </div>
+
+        <div class="">
+            <label>Capsule Name</label>
+            <input type="text" id="txtCapsule" required class="h38px w-full" name="txtCapsule"
+                placeHolder="Enter capsule name..." />
+            <button id="btn-capsule-save" class="mt-8 text-white p-2">SAVE</button>
+        </div>
+    </div>
+</div>
+
+<div id="my-wishlist-modal" class="modal" style="display: none;">
+  <div id="modal-dialog" class="my-wishlist-modal pt-0">
+    <div class="flex justify-between px-5 bar w-full">
+      <div class="flex align-center">
+        <h2 class="font-bold">My Wishlist</h2>
+        <div class="profile rounded-full">
+          <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" class="fill-white" >
+            <path
+              d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
+            </svg>
+        </div>
+        <div class="flex">{{ customer.email }}</div>
+      </div>
+
+      <div id="btn-close-my-wishlist" class="btn-close cursor-pointer flex justify-end align-center">
+        <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+          <path
+            d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+          </svg>
+      </div>      
+    </div>
+
+    <div id="my-wishlist-detail" class="my-wishlist-detail">
+        <div class="flex justify-between w-full sub-heading p-5">
+            <div class="flex align-center">                
+                <div class="p-2 flex">
+                    <img src="https://ds-dev-store.myshopify.com/cdn/shop/files/Look4-OculusPants_010_720x_8d7cd366-7a65-45a6-8d6a-4b69ac1143bf.webp" height="48" />
+                </div>
+                <div class="p-2">                
+                    <div class="select-botton-container w-full relative">
+                        <label>Wishlist</label>
+                        <button id="my-wishlist-activator" class="text-left bg-none no-border">No wishlist selected</button>
+                        <div class="chevron">
+                            <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                                <path
+                                    d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                            </svg>                            
+                        </div>
+                        <div class="popover w-full" id="my-wishlist-popover">
+                            <ul id="my-wishlist-menu" class="action-list" role="menu">
+                                <li role="menuitem" data-id="655ec405631eb908de45017a">Wahyu Wishlist</li>
+                                <li role="menuitem" data-id="655ebbdcd58beb649adfc3c2">My Other Wishlist</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="bullet rounded-full wh-48px">
+                    <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff" class="mx-auto">
+                        <path
+                            d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                    </svg>
+                </div>
+                <div class="p-2">                
+                    <div class="select-botton-container w-full relative">
+                        <label>Capsule</label>
+                        <button id="my-capsule-activator" class="text-left bg-none no-border">No capsule selected</button>
+                        <div class="chevron">
+                            <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                                <path
+                                    d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                            </svg>                            
+                        </div>
+                        <div class="popover w-full" id="my-capsule-popover">
+                            <ul id="my-capsule-menu" class="action-list" role="menu">
+                                <li role="menuitem" data-id="655ec405631eb908de45017a">Home Outfit</li>
+                                <li role="menuitem" data-id="655ebbdcd58beb649adfc3c2">Outdors</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end align-center gap-4">
+                <div class="btn bg-white">
+                    SHARED
+                </div>
+                <div class="btn bg-black text-white">
+                    ADD ALL TO CART
+                </div>
+                <div class="">
+                    Manage Wishlist
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <div id="my-wishlist-content" class="p-5">
+    </div>
+
+  </div>
+</div>
