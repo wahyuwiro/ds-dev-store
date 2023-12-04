@@ -16,7 +16,7 @@ jQuery(document).ready(function($) {
     const appUrl = "http://staging.twixo.io/api/v1";
     // const appUrl = "http://localhost:3000/api/v1";
 
-    myWishlistContent = $('#my-wishlist-content');
+    // myWishlistContent = $('#my-wishlist-content');
     const myWishlistMmodal = $('#my-wishlist-modal');
     const mainContent = $('#MainContent');
 
@@ -74,7 +74,6 @@ jQuery(document).ready(function($) {
     const myWishlistActivator = $('#my-wishlist-activator');
     const myWishlistPopover = $('#my-wishlist-popover');
     const myWishlistMenu = $('#my-wishlist-menu')
-    const myCapsulePopover = $('#my-capsule-popover')
 
     myWishlistActivator[0].addEventListener('click', function () {
         myWishlistPopover[0].style.display = myWishlistPopover[0].style.display === 'block' ? 'none' : 'block';
@@ -90,6 +89,24 @@ jQuery(document).ready(function($) {
             }
         }
     });
+
+    const myCapsuleActivator = $('#my-capsule-activator');
+    const myCapsulePopover = $('#my-capsule-popover');
+    const myCapsuleMenu = $('#my-capsule-menu')
+
+    myCapsuleActivator[0].addEventListener('click', function () {
+        myCapsulePopover[0].style.display = myCapsulePopover[0].style.display === 'block' ? 'none' : 'block';
+    });
+    myCapsuleMenu[0].addEventListener('click', function (event) {
+        if (event.target.tagName === 'LI') {
+            var action = $(event.target).text();
+            $('#my-capsule-activator').html(action);
+            if (myCapsulePopover[0]) { // Check if the element exists
+                myCapsulePopover[0].style.display = myCapsulePopover[0].style.display === 'block' ? 'none' : 'block';
+            }
+        }
+    });
+
 
     btnCloseNotification.addEventListener('click', closeNotification);
     btnAddNewWishlist.addEventListener('click', showAddNewWishlist);
@@ -687,8 +704,8 @@ jQuery(document).ready(function($) {
                         ${productImage.join('')}
                     </div>
                     <div class="mt-5">
-                        <p class="pt-0 m-0 view">${item.products.length} product</p>
-                        <p class="pt-0 m-0 view">VIEW LIST</p>
+                        <p class="p-0 m-0 view">${item.products.length} product</p>
+                        <p class="p-0 m-0 view">VIEW LIST</p>
                     </div>
                 </div>
             `;
