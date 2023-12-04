@@ -1,28 +1,58 @@
 <!-- Include jQuery library (make sure to include this before your script) -->
-<script src = "https://code.jquery.com/jquery-3.6.4.min.js" > </script> 
+{{ 'dsStyle.css' | asset_url | stylesheet_tag }}
+
 <script >
     let wishlistActivator, wishlistPopover, capsuleActivator, capsulePopover;
-    let myWishlistContent
     
     jQuery(document).ready(function($) {
         const getElementValue = (id) => document.getElementById(id).value;
     
         const currentUrl = window.location.href;
         const customerId = `{{ customer.id }}`;
-        const storeDomain = `{{ shop.domain }}`;
-    
+        const storeDomain = `https://{{ shop.domain }}`;
         const shopEmail = `{{ shop.email }}`;
         const shopName = `{{ shop.name }}`
-        console.log('info =>',{
+        {% comment %} console.log('info =>',{
             shopName: shopName,
             shopEmail: shopEmail,
             customerId: customerId,
             storeDomain: storeDomain,
-        })
-    
+        }) {% endcomment %}
+        const s = `{{ product.variants }}`
         const appUrl = "http://staging.twixo.io/api/v1";
-        // const appUrl = "http://localhost:3000/api/v1";
-    
+        const localUrl = "http://localhost:3000/api/v1";
+        
+        const icons = {
+            close: `
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
+                    <path d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
+                </svg>`,
+            user: `
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" class="fill-white" >
+                    <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
+                </svg>`,
+            tag: `
+                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff" class="mx-auto">
+                    <path d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                </svg>`,
+            chevron: `
+                <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                    <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                </svg>`,
+            expand: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M13.4528 1.0415C13.2871 1.0415 13.1281 1.10735 13.0109 1.22456C12.8937 1.34177 12.8278 1.50074 12.8278 1.6665C12.8278 1.83226 12.8937 1.99124 13.0109 2.10845C13.1281 2.22566 13.2871 2.2915 13.4528 2.2915H16.8245L12.0578 7.05817C11.944 7.1761 11.8811 7.33401 11.8826 7.49788C11.8841 7.66175 11.9499 7.81848 12.0658 7.93431C12.1818 8.05013 12.3386 8.11579 12.5024 8.11714C12.6663 8.11848 12.8242 8.05541 12.942 7.9415L17.7087 3.17484V6.54734C17.7087 6.7131 17.7745 6.87207 17.8917 6.98928C18.0089 7.10649 18.1679 7.17234 18.3337 7.17234C18.4994 7.17234 18.6584 7.10649 18.7756 6.98928C18.8928 6.87207 18.9587 6.7131 18.9587 6.54734V1.6665C18.9587 1.50074 18.8928 1.34177 18.7756 1.22456C18.6584 1.10735 18.4994 1.0415 18.3337 1.0415H13.4528ZM6.54783 18.9582C6.71359 18.9582 6.87256 18.8923 6.98977 18.7751C7.10698 18.6579 7.17283 18.4989 7.17283 18.3332C7.17283 18.1674 7.10698 18.0084 6.98977 17.8912C6.87256 17.774 6.71359 17.7082 6.54783 17.7082H3.17616L7.94283 12.9415C8.00249 12.8838 8.05007 12.8148 8.08279 12.7386C8.11551 12.6623 8.13271 12.5803 8.13339 12.4973C8.13408 12.4143 8.11822 12.332 8.08676 12.2552C8.0553 12.1784 8.00886 12.1087 7.95015 12.05C7.89144 11.9914 7.82163 11.945 7.74481 11.9136C7.66799 11.8822 7.58568 11.8664 7.50269 11.8672C7.41971 11.8679 7.3377 11.8852 7.26147 11.918C7.18523 11.9508 7.11629 11.9985 7.05866 12.0582L2.29199 16.8248V13.4523C2.29199 13.3703 2.27583 13.289 2.24442 13.2132C2.21301 13.1373 2.16697 13.0684 2.10893 13.0104C2.0509 12.9524 1.982 12.9063 1.90617 12.8749C1.83034 12.8435 1.74907 12.8273 1.66699 12.8273C1.58492 12.8273 1.50364 12.8435 1.42782 12.8749C1.35199 12.9063 1.28309 12.9524 1.22505 13.0104C1.16701 13.0684 1.12098 13.1373 1.08957 13.2132C1.05816 13.289 1.04199 13.3703 1.04199 13.4523V18.3332C1.04199 18.6782 1.32199 18.9582 1.66699 18.9582H6.54783Z" fill="#707070"/>
+                </svg>`,
+            share: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M12 10.7202C11.4933 10.7202 11.04 10.9202 10.6933 11.2335L5.94 8.46683C5.97333 8.3135 6 8.16016 6 8.00016C6 7.84016 5.97333 7.68683 5.94 7.5335L10.64 4.7935C11 5.12683 11.4733 5.3335 12 5.3335C13.1067 5.3335 14 4.44016 14 3.3335C14 2.22683 13.1067 1.3335 12 1.3335C10.8933 1.3335 10 2.22683 10 3.3335C10 3.4935 10.0267 3.64683 10.06 3.80016L5.36 6.54016C5 6.20683 4.52667 6.00016 4 6.00016C2.89333 6.00016 2 6.8935 2 8.00016C2 9.10683 2.89333 10.0002 4 10.0002C4.52667 10.0002 5 9.7935 5.36 9.46016L10.1067 12.2335C10.0733 12.3735 10.0533 12.5202 10.0533 12.6668C10.0533 13.7402 10.9267 14.6135 12 14.6135C13.0733 14.6135 13.9467 13.7402 13.9467 12.6668C13.9467 11.5935 13.0733 10.7202 12 10.7202Z" fill="white"/>
+                </svg>`,
+            search: `
+                <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
+                    <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
+                </svg>`
+        }
+
         myWishlistContent = $('#my-wishlist-content');
         const myWishlistMmodal = $('#my-wishlist-modal');
         const mainContent = $('#MainContent');
@@ -37,15 +67,7 @@
         const productColumnSticky = document.querySelector('.product')
     
         const btnWishlistSave = document.getElementById('btn-wishlist-save');
-        wishlistPopover = $('#wishlist-popover')[0];
-        wishlistActivator = $('#wishlist-activator')[0];
-        const wishlistContainer = document.getElementById('wishlist-container');
-    
-        capsulePopover = $('#capsule-popover')[0];
-        capsuleActivator = $('#capsule-activator')[0];
-        const capsuleContainer = document.getElementById('capsule-container');
-        const btnAddNewCapsule = $('#btn-add-new-capsule')[0];
-    
+   
         const btnCloseCapsule =  $('#btn-close-capsule')[0];
         const capsuleModal = $('#capsule-modal');
         const btnCapsuleSave = document.getElementById('btn-capsule-save');
@@ -54,19 +76,8 @@
         const addWishlistModal = document.getElementById('add-wishlist-modal');
         const btnCloseModal = $('#btn-close-modal')[0];
         const closeAddWishlist = $('#close-add-wishlist')[0];
-        const btnAddNewWishlist = $('#btn-add-new-wishlist')[0];
         const btnCreateWishlist = document.getElementById('btn-create-wishlist');
-    
-        function handleWishlistClick(action) {
-            wishlistActivator.innerHTML = action;
-            wishlistPopover.style.display = wishlistPopover.style.display === 'block' ? 'none' : 'block';
-        }
-    
-        function handleCapsuleClick(action) {
-            capsuleActivator.innerHTML = action;
-            capsulePopover.style.display = capsulePopover.style.display === 'block' ? 'none' : 'block';
-        }
-    
+   
         sizeSelect.addEventListener('change', function () {
             const selectedValue = sizeSelect.value;
             const selectedIndex = sizeSelect.selectedIndex;
@@ -74,88 +85,82 @@
             document.getElementById('productVariant').value = selectedIndex
         });
     
-        wishlistActivator.addEventListener('click', function () {
-            wishlistPopover.style.display = wishlistPopover.style.display === 'block' ? 'none' : 'block';
+        const cCapsule = document.querySelector('#capsule-container')        
+        const dropCapsule = cCapsule.querySelector('.dropbtn');
+        var dcCapsule = cCapsule.querySelector('.dropdown-content');
+      
+        dropCapsule.addEventListener('click', function (event) {
+          dcCapsule.style.display = (dcCapsule.style.display === 'block') ? 'none' : 'block';
         });
-    
-        const myWishlistActivator = $('#my-wishlist-activator');
-        const myWishlistPopover = $('#my-wishlist-popover');
-        const myWishlistMenu = $('#my-wishlist-menu')
-    
-        myWishlistActivator[0].addEventListener('click', function () {
-            myWishlistPopover[0].style.display = myWishlistPopover[0].style.display === 'block' ? 'none' : 'block';
-            console.log('myWishlistActivator')
-        });
-        myWishlistMenu[0].addEventListener('click', function (event) {
-            if (event.target.tagName === 'LI') {
-                var action = $(event.target).text();
-                console.log('myWishlistMenu =>', action);
-                $('#my-wishlist-activator').html(action);
-                if (myWishlistPopover[0]) { // Check if the element exists
-                    myWishlistPopover[0].style.display = myWishlistPopover[0].style.display === 'block' ? 'none' : 'block';
-                }
+      
+        dcCapsule.addEventListener('click', function (event) {
+            console.log("dcCapsule =>",event.target)
+            if (event.target.tagName === 'A') {
+                var optionText = event.target.textContent;
+                dropCapsule.querySelector('span').textContent = optionText;
+                dcCapsule.style.display = 'none';
+            }else if (event.target.tagName === 'DIV') {
+                capsuleModal.css({'display': 'block'});
+            }
+
+            if (!event.target.matches('.dropbtn')) {
+                dcCapsule.style.display = 'none';
+
             }
         });
-    
-        const myCapsuleActivator = $('#my-capsule-activator');
-        const myCapsulePopover = $('#my-capsule-popover');
-        const myCapsuleMenu = $('#my-capsule-menu')
-    
-        myCapsuleActivator[0].addEventListener('click', function () {
-            myCapsulePopover[0].style.display = myCapsulePopover[0].style.display === 'block' ? 'none' : 'block';
+
+        const cWishlist = document.querySelector('#wishlist-container');
+        const dropWishlist = cWishlist.querySelector('.dropbtn');
+        var dcWishlist = cWishlist.querySelector('.dropdown-content');
+      
+        dropWishlist.addEventListener('click', function (event) {
+          dcWishlist.style.display = (dcWishlist.style.display === 'block') ? 'none' : 'block';
         });
-        myCapsuleMenu[0].addEventListener('click', function (event) {
-            if (event.target.tagName === 'LI') {
-                var action = $(event.target).text();
-                $('#my-capsule-activator').html(action);
-                if (myCapsulePopover[0]) { // Check if the element exists
-                    myCapsulePopover[0].style.display = myCapsulePopover[0].style.display === 'block' ? 'none' : 'block';
-                }
+      
+        dcWishlist.addEventListener('click', function (event) {
+            if (event.target.tagName === 'A') {
+                var optionText = event.target.textContent;
+                var dataId = event.target.getAttribute('data-id');
+                document.getElementById('wishlistId').value = dataId ? dataId : "";
+                dropWishlist.querySelector('span').textContent = optionText;
+                dcWishlist.style.display = 'none';
+            }else if (event.target.tagName === 'DIV') {
+                //addWishlistModal.css({'display': 'block'});
+                addWishlistModal.style.display = 'block';
+            }
+
+            if (!event.target.matches('.dropbtn')) {
+                dcWishlist.style.display = 'none';
+
             }
         });
-    
+
     
         btnCloseNotification.addEventListener('click', closeNotification);
-        btnAddNewWishlist.addEventListener('click', showAddNewWishlist);
         closeAddWishlist.addEventListener('click', closeAddNewWishlist);
-        btnAddNewCapsule.addEventListener('click', showAddNewCapsule);
         btnCloseCapsule.addEventListener('click', closeAddNewCapsule);
         btnCloseModal.addEventListener('click', closeModal);
     
-        capsuleActivator.addEventListener('click', function () {
-            capsulePopover.style.display = capsulePopover.style.display === 'block' ? 'none' : 'block';
-        });
-    
         btnWishlistSave.addEventListener('click', function () {
-            var newWishlistName = document.getElementById("txtWishlist").value;
-            if (newWishlistName) {
-                var newListItem = document.createElement("li");
-                newListItem.setAttribute("role", "menuitem");
-                //newListItem.setAttribute("onclick", "handleWishlistClick('" + newWishlistName + "')");
-                newListItem.textContent = newWishlistName;
-    
-                var wishlistMenu = document.getElementById("wishlist-menu");
-                wishlistMenu.insertBefore(newListItem, wishlistMenu.firstChild);
-                handleWishlistClick(newWishlistName)
-            }
-    
-            closeAddNewWishlist()
+            var txtWishlist = document.getElementById("txtWishlist");
+            if (txtWishlist.value.trim()) {
+                dropWishlist.querySelector('span').textContent = txtWishlist.value.trim();
+                injectDropdown('wishlist', txtWishlist.value.trim())
+                closeAddNewWishlist()
+            }else{
+                txtWishlist.classList.add("warning");
+            }           
         });
     
         btnCapsuleSave.addEventListener('click', function () {
-            var newCapsuleName = document.getElementById("txtCapsule").value;
-            if (newCapsuleName) {
-                var newListItem = document.createElement("li");
-                newListItem.setAttribute("role", "menuitem");
-                //newListItem.setAttribute("onclick", "handleCapsuleClick('" + newCapsuleName + "')");
-                newListItem.textContent = newCapsuleName;
-    
-                var capsuleMenu = document.getElementById("capsule-menu");
-                capsuleMenu.insertBefore(newListItem, capsuleMenu.firstChild);
-                handleCapsuleClick(newCapsuleName)
+            var txtCapsule = document.getElementById("txtCapsule");
+            if (txtCapsule.value.trim()) {
+                dropCapsule.querySelector('span').textContent = txtCapsule.value.trim();
+                injectDropdown('capsule', txtCapsule.value.trim())
+                closeAddNewCapsule()
+            }else{
+                txtCapsule.classList.add("warning");
             }
-    
-            closeAddNewCapsule()
         });
     
     
@@ -168,51 +173,67 @@
             utilityBar.append(rightMenu);
         }
     
-        if (customerId !== "" && storeDomain !== "" && !getCookie('wishlist')) {
-            getWishlist(customerId, storeDomain);
-        }
-        if (customerId !== "" && storeDomain !== "" && !getCookie('capsule-unique-names')) {
-            getProductCapsules(customerId, storeDomain);
-        }    
-        if (customerId !== "" && storeDomain !== "") {
+        if (shopName !== "" && shopEmail !== "") {
             getStore(shopName, shopEmail);
         }
     
-        if(getCookie('wishlist')) { // inject wistlist item
-            let res = getCookie('wishlist');
-            if(res) res = JSON.parse(res);
-            const tmp = res.map(item => ({ _id: item._id, name: item.name }));
+         // inject wistlist item
+         const wishlistData = getLocalStorage('wishlist');
+        if(wishlistData) {
+            const tmp = wishlistData.map(item => ({ _id: item._id, name: item.name }));
             tmp.forEach((e) => {
-                var newListItem = document.createElement("li");
-                newListItem.setAttribute("role", "menuitem");
-                // newListItem.setAttribute("onclick", "handleWishlistClick('" + e + "')");
-                newListItem.textContent = e.name;
-                newListItem.setAttribute("data-id", e._id);
-                var wishlistMenu = document.getElementById("wishlist-menu");
-                wishlistMenu.insertBefore(newListItem, wishlistMenu.firstChild);
+                if(e.name !== "") injectDropdown('wishlist', e)
             })
         }
-        //capsule-unique-names
-        if(getCookie('capsule-unique-names')) { // inject capsule item
+        // inject capsule item
+        if(getCookie('capsule-unique-names')) { 
             let res = getCookie('capsule-unique-names');
             if(res) res = JSON.parse(res);
             res.forEach((e) => {
-                var newListItem = document.createElement("li");
-                newListItem.setAttribute("role", "menuitem");
-                newListItem.textContent = e;
-                var capsuleMenu = document.getElementById("capsule-menu");
-                capsuleMenu.insertBefore(newListItem, capsuleMenu.firstChild);
+                if(e !== "") injectDropdown('capsule', e);
             })
         }
     
         // Event listener for my-account-menu click
         $('#my-account-menu').on('click', function () {
-            window.location.href = customerId === "" ? "/account/login" : "/account/";
+            window.location.href = customerId === "" ? redirectToLogin : "/account/";
         });
     
-        // Event listener for btn-close-my-wishlist click
-        $('#btn-close-my-wishlist').on('click', closeMyWishlist);
-    
+        var variantRadios = document.querySelectorAll('input[name="Size"]');
+        // Add a change event listener to the radio buttons
+        var allSizes = [];
+        variantRadios.forEach(function (radio) {
+            allSizes.push(radio.value);
+        });
+
+        variantRadios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                // Check if the radio button is checked
+                if (radio.checked) {
+                    // Get the selected variant size value
+                    var selectedVariantSize = radio.value;
+                    document.getElementById('productSize').value = selectedVariantSize
+                    sizeSelect.innerHTML = "";
+                    allSizes.forEach(function (variant) {
+                        var option = document.createElement("option");
+                        option.value = variant;
+                        option.text = variant;
+        
+                        // Set the selected attribute based on the value
+                        if (variant === selectedVariantSize) {
+                            option.selected = true;
+                        }
+        
+                        sizeSelect.appendChild(option);
+                    });
+        
+
+                }
+            });
+        });
+        
+
+
         // Function to append menu item
         function appendMenuItem(parent, text) {
             const menuItem = $('<div>').text(text).attr('id', text.toLowerCase().replace(/\s+/g, '-') + '-menu').addClass('right-menu');
@@ -226,18 +247,19 @@
             const productPrice = getElementValue("productPrice");
             const productImage = "https:" + getElementValue("productImage");
             const productUrl = getElementValue("productUrl");
-            const productSize = getElementValue("productSize");
+            let productSize = getElementValue("productSize");
+            if(productSize === "Default Title") productSize = "--"
             const productVariant = Number(getElementValue("productVariant"));
     
+            const userId = `{{ customer.id }}`;   
             const comments = getElementValue("txtComment");
-            const userId = getElementValue("customerId");
             const email = getElementValue("customerEmail");
             const first_name = getElementValue("customerFirstname");
             const last_name = getElementValue("customerLastname");
-            const store = getElementValue("storeDomain");
+            const store = storeDomain
     
-            const name = document.getElementById("wishlist-activator").innerHTML === "No wishlist selected" ? "" : document.getElementById("wishlist-activator").innerHTML;
-            const capsuleName = document.getElementById("capsule-activator").innerHTML === "No capsule selected" ? "" : document.getElementById("capsule-activator").innerHTML;
+            const name = dropWishlist.querySelector('span').textContent === "No wishlist selected" ? "" : dropWishlist.querySelector('span').textContent;
+            const capsuleName = dropCapsule.querySelector('span').textContent === "No capsule selected" ? "" : dropCapsule.querySelector('span').textContent;   
     
             const obj = {
                 store,
@@ -300,18 +322,12 @@
             try {
                 let isTrue = 0;
                 if (obj.name === "") {
-                    wishlistContainer.classList.add("warning");
+                    cWishlist.classList.add("warning");
                     isTrue++
                 } else {
-                    wishlistContainer.classList.remove("warning");
+                    cWishlist.classList.remove("warning");
                 }
-                // // comments not required
-                // if (!obj.comments) {
-                //     document.getElementById('txtComment').classList.add("warning")
-                //     isTrue++
-                // } else {
-                //     document.getElementById('txtComment').classList.remove("warning");
-                // }
+
                 if (isTrue > 0) return;
     
                 btnCreateWishlist.style.display = "none";
@@ -401,6 +417,9 @@
                         setTimeout(() => {
                             btnCreateWishlist.style.display = "block";
                             document.getElementById("loader").style.display = "none";
+                            dropCapsule.querySelector('span').textContent = "No capsule selected";
+                            dropWishlist.querySelector('span').textContent = "No wishlist selected";
+                            document.getElementById('wishlistId').value = "";
                         }, 2000);
                     }),
                     new Promise(resolve => {
@@ -423,6 +442,138 @@
                 console.error('Error creating wishlist:', error);
             }
         });
+        
+        async function injectDropdown(parent,text) {
+            const container = document.getElementById(`${parent}-container`)
+            const a = document.createElement("A");
+            if(parent === "wishlist") {
+                if(text?._id) {
+                    a.textContent = text.name;
+                    a.setAttribute("data-id", text._id);
+                }else{
+                    a.textContent = text;
+                }
+
+            }else{
+                a.textContent = text;
+
+            }
+            const content = container.querySelector('.dropdown-content')
+            content.insertBefore(a, content.firstChild);
+        }
+        async function resetDropdown(parent) {
+            const container = document.getElementById(`${parent}-container`)
+            const content = container.querySelector('.dropdown-content')
+            if (content) {
+                const aElements = content.querySelectorAll('a');
+                aElements.forEach((aElement) => {
+                    aElement.remove();
+                });
+            }
+        }
+        
+        const wishlistForm = $(`<div id="new-wishlist-modal" class="modal wishlist-modal" style="display: none;">
+            <div id="wishlist-modal-dialog">
+                <div class="flex">
+                    {% if product.images.size > 0 %}
+                    <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+                    {% endif %}
+                    <div class="block px-3 relative w-full">
+                        <h4 class="h4 m-0 w-90">
+                            {{ product.title | escape }}
+                        </h4>
+                        <p class="m-0">Size</p>
+                        <select name="size" id="size" class="bg-none">
+                            {%- for p in product.variants -%}
+                            <option value="{{ p.title }}">{{ p.title }}</option>
+                            {%- endfor -%}
+                        </select>
+                        <div id="close-wishlist-form" class="top-0 right-0 absolute cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+        
+                <p>Add to Wishlist</p>
+                <div class="flex mt-3">
+                    <div class="bullet rounded-full">
+                        <div class="text-center w-full">
+                            <span class="text-center w-full">WL</span>
+                        </div>
+                    </div>
+                    <div class="ml-3 w-full flex flex-wrap align-center">
+                        <div class="select-botton-container w-full relative">
+                            <div id="wishlist-container" class="dropdown w-full">
+                                <button class="dropbtn drop-wishlist bg-none no-border text-left">
+                                    <label>Wishlist</label>
+                                    <div class="chevron">
+                                        <!--
+                                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                                            <path
+                                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                                        </svg>
+                                    -->
+                                    </div>
+                                    <span>No wishlist selected</span>                            
+                                </button>
+                                <input type="hidden" id="wishlistId" value="">
+                                <div class="dropdown-content w-full">
+                                    <div class="p-5">
+                                      <div class="btn-create-new cursor-pointer">CREATE NEW WISHLIST</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        
+                <div class="flex mt-3">
+                    <div class="bullet rounded-full">
+                        <div class="text-center w-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff">
+                                <path
+                                    d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
+                                </svg>
+                        </div>
+                    </div>
+                    <div class="ml-3 w-full flex flex-wrap align-center">
+                        <div class="select-botton-container w-full relative">
+                            <div id="capsule-container" class="dropdown w-full">
+                                <button class="dropbtn drop-capsule bg-none no-border text-left">
+                                    <label>Capsule</label>
+                                    <div class="chevron">
+                                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
+                                            <path
+                                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
+                                        </svg>
+                                    </div>
+                                    <span>No capsule selected</span>                            
+                                </button>
+                                <div class="dropdown-content dropdown-content-capsule w-full">
+                                    <div class="p-5">
+                                      <div class="btn-create-new cursor-pointer">CREATE NEW CAPSULE</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <p class="m-0 mt-8">Add a Comment</p>
+                <input type="text" id="txtComment" class="h64px w-full" name="txtComment">
+                <button id="btn-create-wishlist" class="mt-8 text-white p-2">ADD TO WISHLIST</button>
+                <div id="loader" class="loader"></div>
+            </div>
+        </div>`);
+        
+        const openWishlistForm = () => {
+            $("body").append(wishlistForm)
+            $("#close-wishlist-form").html($(icons.close))
+            wishlistForm.show();
+            //addBodyStyling();
+            {% comment %} mainContent.css({
+                position: 'relative',
+                zIndex: -1
+            }); {% endcomment %}
+          }
     
         async function getStore(name, email) {
             try {
@@ -433,6 +584,10 @@
                 };
                 $.ajax(requestOptions).done(function (response) {
                     const res = response.data[0];
+                    if(res) {
+                        setCookie('storeSetting', JSON.stringify(res), 1);
+                        setLocalStorage("storeSetting", res)
+                    }
                     let wishlistButton = $('#wishlist-button');
     
                     if (res && wishlistButton.length > 0) {
@@ -441,15 +596,21 @@
                         }
     
                         if ([1, 2, 3, 4].includes(res.buttonSettings.type)) {
-                            const divElement = $('<div>').html("Add to Wishlist").css({
-                                fontSize: "12px",
+                            const btnLabel = res.buttonSettings.label === "" ? "Add to Wishlist &nbsp" : res.buttonSettings.label + " &nbsp"
+                            const divElement = $('<div>').html(btnLabel).css({
+                                fontSize: "14px",
                                 color: res.buttonSettings.colorAfterAdded
                             });
-                            wishlistButton.css('marginRight', '-15px').append(divElement);
+                            wishlistButton.css({'padding-right': '15px !important'}).append(divElement);
+                            $('.wishlist-form').css({
+                                display: "inline-block",
+                                position: "unset",
+                                marginTop: "1.5rem"
+                            })
                         }
                         if ([1, 2].includes(res.buttonSettings.type)) {
                             wishlistButton.css({
-                                padding: "2px",
+                                padding: res.buttonSettings.type === 1 ? "2px" : "14px 8px",
                                 background: res.buttonSettings.colorBeforeAdded,
                                 color: res.buttonSettings.colorAfterAdded,
                                 borderRadius: "4px"
@@ -458,6 +619,8 @@
                     }
     
                     wishlistButton.on('click', customerId === '' ? redirectToLogin : showModal);
+                    {% comment %} wishlistButton.on('click', customerId === '' ? redirectToLogin : openWishlistForm); {% endcomment %}
+                    
     
                     const headerIcons = document.querySelector('.header__icons');
                     if (headerIcons) {
@@ -475,16 +638,19 @@
                         } else {
                             newHTML = `
                                 <a style="margin-left: 1.2rem" class="header__icon header__icon--wishlist link focus-inset" id="my-wishlist-menu">
-                                <span class="">Wishlist</span>
+                                <span class="">${res.launcherSettings.name === "" ? "Wishlist" : res.launcherSettings.name}</span>
                                 </a>
                             `;
                         }
     
                         headerIcons.insertAdjacentHTML('beforeend', newHTML);
-                        // Event listener for my-wishlist-menu click
+                       // Event listener for my-wishlist-menu click
                         $('#my-wishlist-menu').on('click', function () {
-                            if (customerId !== "" && storeDomain !== "" && getCookie('wishlist')) {
+                            {% comment %} if (customerId !== "" && storeDomain !== "" && getCookie('wishlist')) { {% endcomment %}
+                            if (customerId !== "" && storeDomain !== "") {
                                 showMyWishlist();
+                            }else{
+                                redirectToLogin();
                             }
                         });
     
@@ -500,7 +666,6 @@
         }
     
         async function getWishlist(userId, store) {
-    
             try {
                 const requestOptions = {
                     "url": `${appUrl}/wishlist?userId=${userId}&store=${store}&page=1&limit=30&sort[key]=Created+Date&sort[direction]=desc`,
@@ -511,31 +676,39 @@
                 $.ajax(requestOptions).done(function (response) {
                     const res = response.data.items;
                     if (res) {
-                        // const tmp = res.map(item => ({ _id: item._id, name: item.name }));
-                        // tmp.forEach((e) => {
-                        //     var newListItem = document.createElement("li");
-                        //     newListItem.setAttribute("role", "menuitem");
-                        //     // newListItem.setAttribute("onclick", "handleWishlistClick('" + e + "')");
-                        //     newListItem.textContent = e.name;
-                        //     newListItem.setAttribute("data-id", e._id);
-                        //     var wishlistMenu = document.getElementById("wishlist-menu");
-                        //     wishlistMenu.insertBefore(newListItem, wishlistMenu.firstChild);
-                        // })
-    
                         const simplifiedWishlist = res.map(item => ({
                             _id: item._id,
                             store: item.store,
                             name: item.name,
                             products: item.products.map(product => ({
+                                _id: product._id,
+                                productId: product.productId,
                                 productName: product.productName,
                                 productPrice: product.productPrice,
                                 productSize: product.productSize,
-                                productImage: removeQueryString(product.productImage)
-                            }))
+                                productImage: removeQueryString(product.productImage),
+                                capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
+                            })),
+                            comments: item.comments.map(comment => ({
+                                comment: comment.comment,
+                                createdAt: comment.createdAt,
+                                commentedBy: {
+                                    first_name: comment.commentedBy.first_name,
+                                    last_name: comment.commentedBy.last_name,
+                                    email: comment.commentedBy.email,
+                                    userId: comment.commentedBy.userId,
+                                }
+                            })), 
                         }));
-    
-                        setCookie('wishlist', JSON.stringify(simplifiedWishlist), 1); // Save wishlist to a cookie that expires in 1 days
-                        // setCookie('wishlist-unique-names', JSON.stringify(distinctNames), 1);
+                        setLocalStorage('wishlist', simplifiedWishlist);
+
+                        //deleteCookie("wishlist");
+                        //setCookie('wishlist', JSON.stringify(simplifiedWishlist), 1); // Save wishlist to a cookie that expires in 1 days
+                        resetDropdown('wishlist')
+                        simplifiedWishlist.forEach((e) => {
+                            injectDropdown('wishlist', e)
+                        })
+            
     
                     }
                 });
@@ -561,13 +734,6 @@
                     });
                     const distinctNames = Array.from(uniqueNames);
     
-                    // distinctNames.forEach((e) => {
-                    //     var newListItem = document.createElement("li");
-                    //     newListItem.setAttribute("role", "menuitem");
-                    //     newListItem.textContent = e;
-                    //     var capsuleMenu = document.getElementById("capsule-menu");
-                    //     capsuleMenu.insertBefore(newListItem, capsuleMenu.firstChild);
-                    // })
                     setCookie('capsule-unique-names', JSON.stringify(distinctNames), 1);
                 });
     
@@ -575,7 +741,6 @@
                 console.error('Error:', error);
             }
         }
-    
     
         if (currentUrl.includes('/products/')) {
             const productTitle = document.querySelector('.product__title');
@@ -587,12 +752,22 @@
             // Append the wishlistForm div to the productTitle div
             if (productTitle) productTitle.appendChild(wishlistForm);
     
+            //if (customerId !== "" && storeDomain !== "" && !getCookie('wishlist')) {
+            if (customerId !== "" && storeDomain !== "") {
+                getWishlist(customerId, storeDomain);
+            }
+            //if (customerId !== "" && storeDomain !== "" && !getCookie('capsule-unique-names')) {
+            if (customerId !== "" && storeDomain !== "") {    
+                getProductCapsules(customerId, storeDomain);
+            }
+    
             // Call your getStore function
             // getStore(shopName, shopEmail);
         }
     
         function redirectToLogin() {
-            window.location.href = "/account/login";
+            openLoginModal();
+            //window.location.href = "/account/login";
         }
     
         function showModal() {
@@ -600,9 +775,24 @@
             productColumnSticky.style.position = "relative";
             productColumnSticky.style.zIndex = -1;
     
+            //addBodyStyling()
+            {% comment %} mainContent.css({
+                position: 'relative',
+                zIndex: -1
+            }); {% endcomment %}
+        }
+        function addBodyStyling() {
+            const mainContent = $('#MainContent');
             mainContent.css({
                 position: 'relative',
                 zIndex: -1
+            });
+        }
+        function delBodyStyling() {
+            const mainContent = $('#MainContent');
+            mainContent.css({
+                position: 'sticky',
+                zIndex: 2
             });
         }
     
@@ -611,25 +801,15 @@
             productColumnSticky.style.position = "sticky"
             productColumnSticky.style.zIndex = 2;
     
-            mainContent.css({
+            //delBodyStyling();
+            {% comment %} mainContent.css({
                 position: 'sticky',
                 zIndex: 2
-            });
-        }
-    
-        function showAddNewWishlist() {
-            wishlistPopover.style.display = wishlistPopover.style.display === 'block' ? 'none' : 'block';
-            addWishlistModal.style.display = 'block';
+            }); {% endcomment %}
         }
     
         function closeAddNewWishlist() {
             addWishlistModal.style.display = 'none';
-        }
-    
-        function showAddNewCapsule() {
-            capsulePopover.style.display = capsulePopover.style.display === 'block' ? 'none' : 'block';
-            // capsuleModal.style.display = 'block';
-            capsuleModal.css({'display': 'block'});
         }
     
         function closeAddNewCapsule() {
@@ -644,10 +824,11 @@
             productColumnSticky.style.position = "sticky"
             productColumnSticky.style.zIndex = 2;
     
-            mainContent.css({
+            //delBodyStyling();
+            {% comment %} mainContent.css({
                 position: 'sticky',
                 zIndex: 2
-            });
+            }); {% endcomment %}
         }
     
         function showNotification() {
@@ -655,10 +836,11 @@
             productColumnSticky.style.position = "relative"
             productColumnSticky.style.zIndex = -1;
     
-            mainContent.css({
+            //addBodyStyling();
+            {% comment %} mainContent.css({
                 position: 'relative',
                 zIndex: -1
-            });
+            }); {% endcomment %}
     
         }
     
@@ -666,92 +848,776 @@
         function removeQueryString(url) {
             return url.split('?')[0];
         }
+
+        function getInitials(str) {
+            var words = str.split(' ');
+            var initials = words.map(function(word) {
+              return word.charAt(0);
+            }).join('');
     
-        // Function to show wishlist modal
-        function showMyWishlist() {
-            let tmp = getCookie('wishlist');
-            tmp = JSON.parse(tmp);
-            let idx = 0;
-            myWishlistContent.html("")
-            tmp.forEach(function (item, index) {
-                let i = index + 1;
-                let wishlistWrap;
-                if (i % 3 === 1) {
-                    idx++;
-                    wishlistWrap = document.createElement('div');
-                    wishlistWrap.className = "wishlist-content"
-                    wishlistWrap.innerHTML = '<div id="wrap-' + idx + '" class="flex flex-wrap mx-auto"></div>';
-                    myWishlistContent.append(wishlistWrap);
+            return initials.toUpperCase();
+        }
     
-                } else {}
-                wishlistWrap = document.getElementById('wrap-' + idx);
-                const productImage = [];
-                let imageCount=0;
-                item.products.forEach((e) => { 
-                    imageCount++
-                    if(imageCount <= 3) productImage.push(`<img src="${e.productImage}" class="w-full h-full object-cover mb-4" />`)
-                })
-    
-                const wishlistItemHTML = `
-                    <div class="wishlist-item bg-white m-4 p-4 shadow-md flex flex-col w-full h-full justify-center" data-id=${item._id}>
-                        <div class="flex justify-between px-5 py-3 w-full mb-auto">
-                            <div class="flex align-center">
-                                <h6 class="name m-0">${item.name}</h6>
-                            </div>
-    
-                            <div class="btn-share cursor-pointer flex justify-end align-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512">
-                                    <path
-                                    d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z" />
-                                </svg>
-                            </div>
-                        </div>
-    
-                        <div class="flex gap-4 item-${item.products.length <= 2 ? item.products.length : 3}">
-                            ${productImage.join('')}
-                        </div>
-                        <div class="mt-5">
-                            <p class="pt-0 m-0 view">${item.products.length} product</p>
-                            <p class="pt-0 m-0 view">VIEW LIST</p>
-                        </div>
-                    </div>
-                `;
-    
-                var div = document.createElement('div');
-                div.classList.add("flex", "w-full", "md:w-1/3", "mb-4")
-                
-                div.innerHTML = wishlistItemHTML
-    
-                wishlistWrap.append(div)
-            })
-    
-            myWishlistMmodal.css('display', 'block');
-            mainContent.css({
+        function groupByProperty(items, propertyName) {
+            return items.reduce((result, item) => {
+                const key = item[propertyName];
+                const { [propertyName]: propertyValue, ...rest } = item;
+        
+                if (!result[key]) {
+                    result[key] = [];
+                }
+        
+                result[key].push(rest);
+                return result;
+            }, {});
+        }
+
+        // // -- start wislist list --
+        const openWishlistList = () => {
+            //const wishlistData = JSON.parse(getCookie('wishlist'));
+            const wishlistData = getLocalStorage('wishlist');
+            const wishlistList = createWishlistList();
+            $('body').append(wishlistList);
+
+            //addBodyStyling();
+            {% comment %} mainContent.css({
                 position: 'relative',
                 zIndex: -1
+            }); {% endcomment %}
+
+            const closeWishlistBtn = wishlistList.find('#btn-close-my-wishlist');        
+            closeWishlistBtn.on('click', () => {
+                wishlistList.remove();
+                //delBodyStyling();
+                {% comment %} mainContent.css({
+                    position: 'sticky',
+                    zIndex: 2
+                }); {% endcomment %}
+            });
+        
+            const myWishlistContent = wishlistList.find('#my-wishlist-content');
+            const myWishlistDetail = wishlistList.find('#my-wishlist-detail');
+        
+            renderWishlistContent(myWishlistContent);
+        
+            const enptyWishlist = wishlistList.find('.enpty-wishlist');
+            if (enptyWishlist.length > 0) {
+                enptyWishlist.find('button').on('click', () => {
+                    window.location.href = '/collections/all';
+                });
+            }
+        
+            myWishlistDetail.addClass('hidden');
+        
+            // Dropdown wishlist
+            const cWishlist = wishlistList.find('#dropdown-wishlist');
+            const dWishlist = cWishlist.find('.dropbtn');
+            const dcWishlist = cWishlist.find('.dropdown-content');
+        
+            setupDropdownClickEvent(dWishlist, dcWishlist, showWishlistDetail);
+        
+            dcWishlist.on('input', '#wishlist-search', function () {
+                const searchText = $(this).val().toLowerCase();
+                filterDropdownContent('.dropdown-content a', searchText);
+            });
+        
+            // Dropdown capsule
+            const cCapsule = wishlistList.find('#dropdown-capsule');
+            const dCapsule = cCapsule.find('.dropbtn');
+            const dcCapsule = cCapsule.find('.dropdown-content');
+        
+            setupDropdownClickEvent(dCapsule, dcCapsule, filterProductsByCapsule);
+        
+            myWishlistContent.on('click', '.wishlist-item', function (event) {
+                const wishlistId = $(event.currentTarget).attr('data-id');
+                const closeProduct = myWishlistDetail.find('.wishlist-item .btn-close');
+                closeProduct.html(icons.close);
+                myWishlistContent.addClass('hidden');
+                myWishlistDetail.removeClass('hidden');
+                setupDropdownContent(dcWishlist, wishlistData, true);
+                showWishlistDetail(wishlistId);
+            });
+        
+            wishlistList.show();
+        }
+
+        const createWishlistList = () => {
+            const wishlistList = $(`<div id="my-wishlist-modal" class="modal">
+                <div id="modal-dialog" class="my-wishlist-modal pt-0">
+                    <div class="flex justify-between px-5 bar w-full">
+                        <div class="flex align-center">
+                            <h2 class="font-bold">My Wishlist</h2>
+                            <div class="profile rounded-full"></div>
+                            <div class="flex">{{ customer.email }}</div>
+                        </div>
+            
+                        <div id="btn-close-my-wishlist" class="btn-close cursor-pointer flex justify-end align-center">
+                        </div>
+                    </div>
+                    <div id="my-wishlist-detail" class="my-wishlist-detail">
+                        <div class="flex justify-between w-full sub-heading p-5">
+                            <div class="flex align-center">
+                                <div class="p-2 flex wishlist-icon">
+                                </div>
+                                <div class="p-2">
+                                    <div class="select-botton-container w-full relative">
+                                        <div id="dropdown-wishlist" class="dropdown w-full pr-12">
+                                            <button class="dropbtn drop-wishlist bg-none no-border text-left">
+                                                <label>Wishlist</label>
+                                                <div class="chevron right-0">
+                                                    ${icons.chevron}
+                                                </div>
+                                                <span>Rose Wishlist (13)</span>                            
+                                            </button>
+                                            <input type="hidden" id="wishlistId" value="">
+                                            <div class="dropdown-content w-full"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bullet rounded-full">
+                                    ${icons.user}                                
+                                </div>
+                                <div class="p-2">
+                                    <div class="select-botton-container w-full relative">
+                                        <div id="dropdown-capsule" class="dropdown w-full pr-12">
+                                            <button class="dropbtn drop-capsule bg-none no-border text-left">
+                                                <label>Capsule</label>
+                                                <div class="chevron right-0">
+                                                    ${icons.chevron}
+                                                </div>
+                                                <span>Select</span>                            
+                                            </button>
+                                            <div class="dropdown-content w-full"></div>
+                                        </div>                                    
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex justify-end align-center gap-4">
+                                <div class="btn bg-white">SHARED</div>
+                                <div class="btn bg-black text-white">ADD ALL TO CART</div>
+                                <div class="">Manage Wishlist</div>
+            
+                            </div>
+                        </div>
+                        <div id="my-wishlist-detail-content" class="p-5">            
+                        </div>
+                        <div class="comment">
+                            <div class="flex justify-between w-full">
+                                <div class="flex comments-count">
+                                    <p class="font-bold">Comments (0)</p>
+                                </div>
+                                <div class="flex justify-end gap-8 flex-wrap align-center icon">
+                                    <div class="flex flex-wrap align-center">
+                                        ${icons.chevron}
+                                    </div>
+                                    <div id="expand-comment" class="flex flex-wrap align-center cursor-pointer">
+                                        ${icons.expand}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="list-comment">
+                            </div>
+                            
+                            <div class="flex justify-between w-full gap-8">
+                                <div class="flex">
+                                    <div class="bullet rounded-full">
+                                        <div class="text-center w-full">
+                                            <span class="text-center w-full">${getInitials(`{{ customer.first_name }} {{ customer.last_name }}`)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex w-full">
+                                    <div class="input-group w-full">
+                                        <input id="wishlistComment" type="text" placeholder="Enter your comment here...">
+                                        <div id="loader" class="loader"></div>
+                                        <button disabled id="submitComment" type="button">POST</button>
+                                    </div>                            
+                                </div>
+                            </div>
+                            <div class="mt-5">
+                                <span class="font-bold">*Enter </span>to Send 
+                                <span class="font-bold">Shift + Enter</span> to Add a New Line 
+                            </div>
+    
+                        </div>
+                    </div>
+                    <div id="my-wishlist-content" class="p-5">
+                    </div>
+                </div>
+            </div>
+            `);
+        
+            wishlistList.find('.profile').html(icons.user);
+            wishlistList.find('#btn-close-my-wishlist').html(icons.close);
+        
+            return wishlistList;
+        };
+        const createNotification = () => {
+            const modal = $(`
+                <div id="notification" class="modal">
+                    <div id="notification-modal-dialog" style="top: 13%; left: 0; transform: unset; width: 544px">
+                        <div class="flex">
+                            {% if product.images.size > 0 %}
+                            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+                            {% endif %}
+                            <div class="block px-3 relative w-full">
+                                <p>
+                                    <span class="font-bold">
+                                        {{ product.title | escape }}
+                                    </span>
+                                    <span id="sizeAdd" class="font-bold"> - Size : l
+                                    </span>
+                                    Your comment has been successfully submitted!
+                
+                                </p>
+                                <div id="close-notification" class="top-0 right-0 absolute cursor-pointer">
+                                    ${icons.close}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            return modal;
+        }
+
+        const renderWishlistContent = (container) => {
+            container.html('');
+            //const wishlistData = JSON.parse(getCookie('wishlist'));
+            const wishlistData = getLocalStorage('wishlist');
+            if (wishlistData && wishlistData.length > 0) {
+                let wishlistIndex = 0;        
+                wishlistData.forEach((item, index) => {
+                    wishlistIndex = renderWishlistItem(container, wishlistIndex, item);
+                });
+            } else {
+                renderEmptyWishlist(container);
+            }
+        
+            container.removeClass('hidden');
+        };
+        
+        const renderWishlistItem = (container, wishlistIndex, item) => {
+            const i = wishlistIndex + 1;
+            let wishlistWrap;
+        
+            if (i % 3 === 1) {
+                wishlistIndex++;
+                wishlistWrap = document.createElement('div');
+                wishlistWrap.className = 'wishlist-content';
+                wishlistWrap.innerHTML = `<div id="wrap-${wishlistIndex}" class="flex flex-wrap mx-auto gap-6 mt-5"></div>`;
+                container.append(wishlistWrap);
+            }
+        
+            wishlistWrap = document.getElementById(`wrap-${wishlistIndex}`);
+            const productImage = [];
+            let imageCount = 0;
+        
+            item.products.forEach((e) => {
+                imageCount++;
+                if (imageCount <= 3) productImage.push(`<img src="${e.productImage}" class="w-full h-full object-cover mb-4" />`);
+            });
+        
+            const wishlistItemHTML = `
+                <div class="wishlist-item bg-white m-4 p-4 shadow-md flex flex-col w-full h-full justify-center" data-id=${item._id}>
+                    <div class="flex justify-between px-5 py-3 w-full mb-auto">
+                        <div class="flex align-center">
+                            <h6 class="name m-0">${item.name}</h6>
+                        </div>
+
+                        <div class="btn-share cursor-pointer flex justify-end align-center">
+                            ${icons.share}
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 my-auto item-${item.products.length <= 2 ? item.products.length : 3}">
+                        ${productImage.join('')}
+                    </div>
+                    <div class="mt-5">
+                        <p class="p-0 m-0 view">${item.products.length} product</p>
+                        <p class="p-0 m-0 view">VIEW LIST</p>
+                    </div>
+                </div>
+            `;
+        
+            const div = document.createElement('div');
+            div.classList.add('flex', 'w-full', 'md:w-1/3', 'mb-4');
+            div.innerHTML = wishlistItemHTML;
+            wishlistWrap.append(div);
+        
+            return wishlistIndex;
+        };
+        
+        const renderEmptyWishlist = (container) => {
+            container.html(`
+                <div class="p-5 enpty-wishlist">
+                    <div class="text-center">
+                        <h1>Love It? Add To My Wishlist</h1>
+                        <p>My Wishlist allows you to keep track of all of your favorites...</p>
+                        <p>It's very easy, If you find an item you love, just click on the "heart" icon...</p>
+                    </div>
+                    <div class="btn">
+                        <button>CONTINUE SHOPPING</button>
+                        <button>SEE ALL CLOTHING</button>
+                    </div>
+                </div>
+            `);
+        };
+        
+        const setupDropdownClickEvent = (dropdown, dropdownContent, callback) => {
+            dropdown.on('click', () => {
+                dropdownContent.css('display', dropdownContent.css('display') === 'block' ? 'none' : 'block');
+            });
+        
+            dropdownContent.on('click', (event) => {
+                const dataId = event.target.getAttribute('data-id');
+                if (event.target.tagName === 'A') {
+                    const optionText = event.target.textContent;
+                    callback(dataId);
+                    dropdown.find('span').text(optionText);
+                    dropdownContent.css('display', 'none');
+                } else if (event.target.tagName === 'DIV') {
+                    //addWishlistModal.css('display', 'block');
+                    if(dataId === "clear-selection") {
+                        dropdown.find('span').text('Select');
+                        dropdownContent.css('display', 'none');
+                    }else{
+                        addWishlistModal.style.display = 'block';
+                    }
+                }
+            });
+        };
+        
+        const filterDropdownContent = (selector, searchText) => {
+            $(selector).each(function () {
+                const wishlistName = $(this).text().toLowerCase();
+                wishlistName.includes(searchText) ? $(this).show() : $(this).hide();
+            });
+        };
+        
+        const setupDropdownContent = (dropdownContent, data, isWishlist = false) => {
+            dropdownContent.html(isWishlist ? `
+                <div class="search">
+                    <label>Search Wishlist</label>
+                    <div class="input-group">
+                        <div class="icon">
+                            ${icons.search}
+                        </div>
+                        <input id="wishlist-search" type="text" placeholder="Wishlist name...">
+                    </div>
+                    <label>Results</label>
+                </div>
+            ` : ``);
+        
+            data.forEach((item) => {
+                dropdownContent.append(isWishlist ? `                                       
+                    <a data-id="${item._id}">
+                        <img src="${item.products[0].productImage}">
+                        ${item.name} (${item.products.length})
+                    </a>
+                ` : `
+                    <a data-id="${item}">${item}</a>
+                `);
+            });
+        };
+
+        function filterProductsByCapsule(selectedCapsule) {
+            const wishlistContent = document.getElementById('my-wishlist-detail-content');
+            const capsules = wishlistContent.querySelectorAll('.bar');
+
+            const dCapsule = $('#dropdown-capsule');
+            const dropdownContent = dCapsule.find('.dropdown-content');
+
+            const capsuleData = JSON.parse(getCookie('capsuleData'));
+
+            dropdownContent.innerHTML = ``;
+            if(capsuleData) setupDropdownContent(dropdownContent, capsuleData);
+
+            const d = document.createElement('DIV');
+            d.classList.add('clear');
+            d.innerHTML = `
+                <div data-id="clear-selection" class="flex gap-4 ">
+                    <div class="icon">${icons.close}</div>
+                    Clear Selection
+                </div>
+            `;
+            dropdownContent.prepend(d);
+
+            dropdownContent.on('click', function (event) {
+                if (event.target.tagName === 'A') {
+                    const selectedCapsule = event.target.getAttribute('data-id');
+                    filterProductsByCapsule(selectedCapsule);
+                }else{
+                    filterProductsByCapsule();
+                    dropdownContent.find('.clear').remove();
+                }
+            });
+
+            
+            capsules.forEach(capsule => {
+                const capsuleName = capsule.textContent.trim();
+                const capsuleContent = capsule.nextElementSibling;
+                if(selectedCapsule) {
+                    if (capsuleName === selectedCapsule) {
+                        capsule.style.display = 'block'; // Show the selected capsule title
+                        capsuleContent.style.display = 'block'; // Show the selected capsule content
+                    } else {
+                        capsule.style.display = 'none'; // Hide other capsules
+                        capsuleContent.style.display = 'none'; // Hide other capsules' content
+                    }
+                }else{
+                    capsule.style.display = '';
+                    capsuleContent.style.display = '';
+                }
             });
         }
+        const showWishlistDetail = (wishlistId) => {
+            const cWishlist = $('#dropdown-wishlist');
+            const dWishlist = cWishlist.find('.dropbtn');
+            const dcWishlist = cWishlist.find('.dropdown-content');
+        
+            const cCapsule = $('#dropdown-capsule');
+            const dcCapsule = cCapsule.find('.dropdown-content');
+        
+            //const wishlistData = JSON.parse(getCookie('wishlist'));
+            const wishlistData = getLocalStorage('wishlist');
+            const wishlistDetail = wishlistData.find((e) => e._id == wishlistId);
+            console.log('wishlistDetail =>',wishlistDetail)
+            const myWishlistDetail = $("#my-wishlist-detail");
+
+            if (wishlistDetail) {
+                dWishlist.find('span').text(`${wishlistDetail.name} (${wishlistDetail.products.length})`);
+                const wishlistIcon = $('.wishlist-icon');
+        
+                if (wishlistIcon.length > 0) {
+                    wishlistIcon.html(`<img src="${wishlistDetail.products[0].productImage}" height="48" />`);
+
+                    const commentsCount = wishlistDetail.comments.length > 0 ? wishlistDetail.comments.length : 0
+                    myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
+                    myWishlistDetail.on('input', '#wishlistComment', function () {
+                        const comment = $(this).val().toLowerCase();
+                        if(comment.length > 3) myWishlistDetail.find('#submitComment').prop('disabled', false);
+                    });
+        
     
-        function handleCapsuleClick(action) {
-            capsuleActivator.innerHTML = action;
-            capsulePopover.style.display = capsulePopover.style.display === 'block' ? 'none' : 'block';
-        }
+                }
+            }
+        
+            const groupedData = groupByProperty(wishlistDetail.products, 'capsule');
+            const capsuleData = Object.keys(groupedData);
+            if(capsuleData) {
+                setCookie('capsuleData', JSON.stringify(capsuleData), 1);
+                setupDropdownContent(dcCapsule, capsuleData);
+            }
+
+            const dtlContent = $('#my-wishlist-detail-content');
+            dtlContent.html('');
+        
+            let idx = 0;
+        
+            for (const category in groupedData) {
+                if (Object.hasOwnProperty.call(groupedData, category)) {
+                    idx++;
+                    const d = document.createElement('DIV');
+                    d.classList.add('bar');
+                    d.innerHTML = category;
+                    dtlContent.append(d);
+        
+                    const wrap = $(`
+                        <div class="wishlist-content">
+                            <div id="wrap-dtl-${idx}" class="flex flex-wrap mx-auto gap-6 mt-5 mb-5"></div>
+                        </div>`
+                    );
+        
+                    groupedData[category].forEach((product) => {
+                        const item = $(`
+                            <div class="flex item mb-4">
+                                <div class="wishlist-item bg-white shadow-md flex flex-col w-full h-full justify-center mb-0">
+                                    <div class="p-3">
+                                        <div class="flex justify-between pb-3 w-full mb-auto">
+                                            <div class="btn-close cursor-pointer ml-auto" data-product-id="${product._id}">
+                                                ${icons.close}
+                                            </div>
+                                        </div>
+                                
+                                        <div class="flex gap-4 my-auto">
+                                            <img src="${product.productImage}"
+                                                class="w-full h-full object-cover mb-4">
+                                        </div>
+                                        <div class="mt-8">
+                                            <p class="p-0 m-0 view">${product.productName}</p>
+                                            <p class="p-0 m-0 view">${product.productPrice}</p>
+                                        </div>
+                                    </div>
+                                    <div class="select-size">
+                                        <p class="">SELECT SIZE</p>
+                                    </div>                                    
+                                </div>
+                            </div>
+                        `);
+        
+                        wrap.find(`#wrap-dtl-${idx}`).append(item);
+                    });
+        
+                    dtlContent.append(wrap);
+                }
+            }
+            $('.btn-close').on('click', async function (event) {
+                const productId = $(this).data('product-id');
+                const confirm = $(`
+                    <div id="remove-product-modal" class="modal" style="display: block">
+                        <div class="modal-content" style="width: 385px;">
+                          <div class="modal-body pt-0 text-center">
+                            <p>Are you sure want to remove the item? You cannot undo this step..</p>
+                            <div class="confirm flex gap-4 w-1/2 mx-auto">
+                                <button id="confirm-no" class="p-2">No</button>
+                                <button id="confirm-yes" class="p-2">Yes</button>
+                            </div>
+                          </div>
+                        </div>
+                    </div>                    
+                `);
+
+                $('body').append(confirm);
+                confirm.find("button").on('click', async function (event) {
+                    const buttonId = event.target.id;
+                    confirm.remove();
+                    if (buttonId === 'confirm-yes') {
+                        
+                        const obj = {
+                            wishlistId: wishlistId,
+                            productId : productId,
+                        }
+
+                        const settings = {
+                            "url": `${localUrl}/${wishlistId}/product/?product_id=${productId}`,
+                            "method": "DELETE",
+                            "timeout": 0,
+                          };
+                          
+                          $.ajax(settings).done(function (response) {
+                            console.log("response =>",response);
+                          });
+        
+                        console.log("obj =>",obj)
+
+
+        
+                        getWishlist(customerId, storeDomain);
+        
+                        //console.log("result =>",result)
+        
+                    }
+                })
+            })
+
+            $('#expand-comment').on('click', async function () {
+                const classExpand = $(this).attr('class');
+                let isOpen = true
+                if (classExpand.includes('open-expand')) {
+                    // If "open" class exists, remove it
+                    $(this).removeClass('open-expand');
+                    isOpen = false
+                } else {
+                    // If "open" class does not exist, add it
+                    $(this).addClass('open-expand');
+                }
+
+                if(isOpen) {
+                    myWishlistDetail.find("#my-wishlist-detail-content").css({display: "none"})
+                    myWishlistDetail.find(".sub-heading").css({display: "none"})
+
+                    if(wishlistDetail && wishlistDetail.comments) {
+                        wishlistDetail.comments.forEach((comment) => {
+                            const rComment = renderComment(comment)
+                            myWishlistDetail.find("#list-comment").prepend(rComment)
+                        })
+                    }
+                }else{
+                    myWishlistDetail.find("#my-wishlist-detail-content").css({display: ""});
+                    myWishlistDetail.find(".sub-heading").css({display: ""})
+                    myWishlistDetail.find("#list-comment").html("")
+                }
+
+            })
+
+            $('#submitComment').on('click', async function () {
+                const store = `https://{{ shop.domain }}`;
+                const comments = $('#wishlistComment').val();
+                const first_name = `{{ customer.first_name }}`;
+                const last_name = `{{ customer.last_name }}`;
+                const email =  `{{ customer.email }}`;
+                const userId = `{{ customer.id }}`;
+                const obj = {
+                    store,
+                    comments: comments ? [{
+                        comment: comments,
+                        commentedBy: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    }] : undefined,
+                    createdBy: {
+                        first_name,
+                        last_name,
+                        email,
+                        userId
+                    }
+                };
+                console.log("obj =>",obj);
+                console.log("wishlistId =>",wishlistId);
+                $("#my-wishlist-detail #submitComment").css({display: "none"})
+                $("#my-wishlist-detail #loader").css(
+                    {
+                        display: "block",
+                        margin: "auto",
+                        height: "100%"
+                    }
+                )
+                const myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+                const requestOptions = {
+                    method: 'POST',
+                    //headers: myHeaders,
+                    body: JSON.stringify(obj),
+                    redirect: 'follow'
+                };
+                const response = await fetch(appUrl + "/wishlist/"+wishlistId+"/comment", requestOptions);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+
+                getWishlist(userId, store);
+                const result = await response.json();
+
+                //const notification = createNotification();
+
+                setTimeout(() => {
+                    $("#my-wishlist-detail #loader").css({display: ""})
+                    $("#my-wishlist-detail #submitComment").css({display: ""})
+                    myWishlistDetail.find('#submitComment').prop('disabled', true);
+                    $('#wishlistComment').value = "";
+                    document.querySelector("#wishlistComment").value = "";
+                    const lastComment = result.data.comments.length > 0 ? result.data.comments[result.data.comments.length - 1] : null;
+
+                    const commentsCount = result.data.comments.length > 0 ? result.data.comments.length : 0
+                    myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
+
+                    const newComment = renderComment(lastComment)
+                    myWishlistDetail.find("#list-comment").append(newComment)
+
+
+                    {% comment %} $('body').append(notification);
+                    notification.find('#notification-modal-dialog').addClass('animate__animated', 'animate__slideInDown');
+                    notification.css({display: "block"});{% endcomment %}
     
-    
-        // Function to close wishlist modal
-        function closeMyWishlist() {
-            myWishlistMmodal.css('display', 'none');
-            mainContent.css({
-                position: 'sticky',
-                zIndex: 2
+                }, 3000);
             });
+
+        };
+        
+
+        function showMyWishlist() {
+            openWishlistList();
         }
     
+        // // --- end wislist list --
+
+        const renderComment = (data) => {
+            const fullName = `${data.commentedBy.first_name} ${data.commentedBy.last_name}`
+            const div = document.createElement('DIV');
+            div.classList.add('flex', 'w-full', 'justify-between', 'gap-8', 'mb-5');
+            div.innerHTML = `
+            <div class="flex justify-between w-full gap-8 mb-5">
+                <div class="flex flex-wrap align-center">
+                    <div class="bullet rounded-full">
+                        <div class="text-center w-full">
+                            <span class="text-center w-full">${getInitials(fullName)}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex w-full">
+                    <div class="input-group w-full">
+                        <div class="text">
+                            <label>${fullName}<label>
+                            <p>${data.comment}</p>
+                        </div>
+                        <div class="time">
+                            <p>${timeAgo(data.createdAt)}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            `;
+            return div;
+        };
+
+        function timeAgo(createdAt) {
+            const currentDate = new Date();
+            const createdDate = new Date(createdAt);
+        
+            const timeDifference = currentDate - createdDate;
+            const seconds = Math.floor(timeDifference / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            const days = Math.floor(hours / 24);
+            const weeks = Math.floor(days / 7);
+            const months = Math.floor(days / 30);
+        
+            if (months > 0) {
+                return months === 1 ? '1 month ago' : `${months} months ago`;
+            } else if (weeks > 0) {
+                return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+            } else if (days > 0) {
+                return days === 1 ? '1 day ago' : `${days} days ago`;
+            } else if (hours > 0) {
+                return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+            } else if (minutes > 0) {
+                return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
+            } else {
+                return 'Just now';
+            }
+        }
+
+        function setLocalStorage(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        function getLocalStorage(key) {
+            const storedValue = localStorage.getItem(key);
+          
+            // Check if the stored value is not null or undefined
+            if (storedValue !== null && storedValue !== undefined) {
+              try {
+                // Try to parse the JSON string
+                return JSON.parse(storedValue);
+              } catch (error) {
+                // Handle parsing error, if any
+                console.error(`Error parsing JSON for key '${key}':`, error);
+              }
+            }
+          
+            // Return null if the value is not available or cannot be parsed
+            return null;
+          }
         // Function to set a cookie
         function setCookie(name, value, daysToExpire) {
             const expires = new Date();
             expires.setTime(expires.getTime() + daysToExpire * 24 * 60 * 60 * 1000);
             document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+          
+            // Check if the cookie was successfully set
+            const allCookies = document.cookie;
+            const cookieExists = allCookies.includes(`${name}=${value}`);
+          
+            if (cookieExists) {
+              //console.log(`Cookie '${name}' was successfully set.`);
+            } else {
+              console.error(`Failed to set cookie '${name}'.`);
+            }
         }
     
         // Function to get a cookie by name
@@ -772,29 +1638,242 @@
         }
     
     
-    });
+        // //-- start login popup
+        let storeSetting = localStorage.getItem("storeSetting")
+        storeSetting = JSON.parse(storeSetting) ?? null
     
-    $(document).on('click', '#wishlist-menu li', function () {
-        var action = $(this).text();
-        var dataId = $(this).data('id'); 
-        console.log('wishlist-menu li wkwkwk')
-        document.getElementById('wishlistId').value = dataId ? dataId : "";
-        wishlistActivator.innerHTML = action;
-        wishlistPopover.style.display = wishlistPopover.style.display === 'block' ? 'none' : 'block';
-    });
+        const textColor = storeSetting !== null ? storeSetting.loginPromptSettings.color : ""
+        const text = storeSetting !== null ? storeSetting.loginPromptSettings.promptText && storeSetting.loginPromptSettings.promptText !== "" ? storeSetting.loginPromptSettings.promptText : "" : ""
     
-    $(document).on('click', '#capsule-menu li', function () {
-        var action = $(this).text();
-        capsuleActivator.innerHTML = action;
-        capsulePopover.style.display = capsulePopover.style.display === 'block' ? 'none' : 'block';
-    });
+        const loginFormString = `{%- form 'customer_login', novalidate: 'novalidate' -%}
+        {%- if form.errors -%}
+            {% unless template.name == 'register'  %}
+            <h2 class="form__message" tabindex="-1" autofocus>
+            <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+            <svg style="width: 20px" aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 13 13">
+                <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
+                <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
+                <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
+                <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
+            </svg>
+            {{ 'templates.contact.form.error_heading' | t }}
+            </h2>
+            {{ form.errors | default_errors }}
+            {% endunless %}
+        {%- endif -%}
     
-    $(document).on('click', '.wishlist-item', function () {
-        var wishlistContents = document.querySelectorAll('.wishlist-content');
-        wishlistContents.forEach(function(element) {
-            element.classList.add('hidden');
-        });
+        <div class="modal-field">        
+            <input
+            type="email"
+            name="customer[email]"
+            id="CustomerEmail"
+            autocomplete="email"
+            autocorrect="off"
+            autocapitalize="off"
+            {% if form.errors contains 'form' %}
+                aria-invalid="true"
+            {% endif %}
+            placeholder="{{ 'customer.login_page.email' | t }}"
+            required
+            class="modal-input"
+            >
+        </div>
+    
+        {%- if form.password_needed -%}
+            <div class="modal-field">          
+            <input
+                type="password"
+                value=""
+                name="customer[password]"
+                id="CustomerPassword"
+                autocomplete="current-password"
+                {% if form.errors contains 'form' %}
+                aria-invalid="true"
+                {% endif %}
+                placeholder="{{ 'customer.login_page.password' | t }}"
+                required
+                class="modal-input"
+            >
+            <a href="#recover">FORGOT?</a>
+            </div>
+    
+        {%- endif -%}
+    
+        <button>
+            LOGIN
+        </button>
+        
+        {%- endform -%}`
+    
+        
+        const registerFormString = `{%- form 'create_customer', novalidate: 'novalidate' -%}
+        {%- if form.errors -%}
+            {% unless template.name == 'login'  %}
+            <h2 class="form__message" tabindex="-1" autofocus>
+            <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+            <svg style="width: 20px" aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 13 13">
+                <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
+                <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
+                <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
+                <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
+            </svg>
+            {{ 'templates.contact.form.error_heading' | t }}
+            </h2>
+            <ul> 
+            {%- for field in form.errors -%}
+                <li>
+                {%- if field == 'form' -%}
+                    {{ form.errors.messages[field] }}
+                {%- else -%}
+                    <a href="#RegisterForm-{{ field }}">
+                    {{ form.errors.translated_fields[field] | capitalize }}
+                    {{ form.errors.messages[field] }}
+                    </a>
+                {%- endif -%}
+                </li>
+            {%- endfor -%}
+            </ul>
+        {% endunless %}
+        {%- endif -%}
+        <div class="modal-field">      
+            <input
+            type="text"
+            name="customer[first_name]"
+            id="RegisterForm-FirstName"
+            {% if form.first_name %}value="{{ form.first_name }}"{% endif %}
+            autocomplete="given-name"
+            placeholder="{{ 'customer.register.first_name' | t }}"
+            class="modal-input"
+            required
+            >
+        </div>
+        <div class="modal-field">
+            <input
+            type="text"
+            name="customer[last_name]"
+            id="RegisterForm-LastName"
+            {% if form.last_name %}value="{{ form.last_name }}"{% endif %}
+            autocomplete="family-name"
+            placeholder="{{ 'customer.register.last_name' | t }}"
+            class="modal-input"
+            required
+            >
+        </div>
+        <div class="modal-field">      
+            <input
+            type="email"
+            name="customer[email]"
+            id="RegisterForm-email"
+            {% if form.email %} value="{{ form.email }}"{% endif %}
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="email"
+            aria-required="true"
+            {% if form.errors contains 'email' %}
+                aria-invalid="true"
+                aria-describedby="RegisterForm-email-error"
+            {% endif %}
+            placeholder="{{ 'customer.register.email' | t }}"
+            class="modal-input"
+            required
+            >
+        </div>
+        {%- if form.errors contains 'email' -%}
+            <span id="RegisterForm-email-error" class="form__message">
+            <svg aria-hidden="true" focusable="false" role="presentation">
+                <use href="#icon-error" />
+            </svg>
+            {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}.
+            </span>
+        {%- endif -%}
+        <div class="modal-field">     
+            <input
+            type="password"
+            name="customer[password]"
+            id="RegisterForm-password"
+            aria-required="true"
+            {% if form.errors contains 'password' %}
+                aria-invalid="true"
+                aria-describedby="RegisterForm-password-error"
+            {% endif %}
+            placeholder="{{ 'customer.register.password' | t }}"
+            class="modal-input"
+            required
+            >
+        </div>
+        {%- if form.errors contains 'password' -%}
+            <span id="RegisterForm-password-error" class="form__message">
+            <svg aria-hidden="true" focusable="false" role="presentation">
+                <use href="#icon-error" />
+            </svg>
+            {{ form.errors.translated_fields['password'] | capitalize }} {{ form.errors.messages['password'] }}.
+            </span>
+        {%- endif -%}
+        <button>
+            CREATE ACCOUNT
+        </button>
+        {%- endform -%}
+        `
+    
+        const closeModalButton = $(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style=" position: absolute;right: 24px;top: 24px;" id="close-modal">
+        <g clip-path="url(#clip0_172_9624)">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9993 13.4141L17.6563 19.0711C17.8449 19.2533 18.0975 19.3541 18.3597 19.3518C18.6219 19.3495 18.8727 19.2444 19.0582 19.059C19.2436 18.8736 19.3487 18.6227 19.351 18.3606C19.3533 18.0984 19.2525 17.8458 19.0703 17.6571L13.4133 12.0001L19.0703 6.34315C19.2525 6.15455 19.3533 5.90194 19.351 5.63975C19.3487 5.37755 19.2436 5.12674 19.0582 4.94133C18.8727 4.75592 18.6219 4.65075 18.3597 4.64848C18.0975 4.6462 17.8449 4.74699 17.6563 4.92915L11.9993 10.5861L6.34233 4.92915C6.15288 4.75149 5.90175 4.65451 5.64207 4.65873C5.38238 4.66295 5.13453 4.76803 4.95094 4.95174C4.76736 5.13546 4.66245 5.38339 4.65842 5.64307C4.65439 5.90276 4.75155 6.15382 4.92933 6.34315L10.5853 12.0001L4.92833 17.6571C4.83282 17.7494 4.75664 17.8597 4.70423 17.9817C4.65182 18.1037 4.62424 18.235 4.62308 18.3677C4.62193 18.5005 4.64723 18.6322 4.69751 18.7551C4.74779 18.878 4.82205 18.9897 4.91594 19.0835C5.00983 19.1774 5.12148 19.2517 5.24438 19.302C5.36728 19.3523 5.49896 19.3776 5.63174 19.3764C5.76452 19.3752 5.89574 19.3477 6.01774 19.2953C6.13974 19.2428 6.25009 19.1667 6.34233 19.0711L11.9993 13.4141Z" fill="black"/>
+        </g>
+        <defs>
+        <clipPath id="clip0_172_9624">
+        <rect width="24" height="24" fill="white"/>
+        </clipPath>
+        </defs>
+        </svg>`)
     
     
-    });
+        const loginModal = $(`<div id="login-modal" class="modal" style="display: none;">
+        <div class="login-modal" id="modal-dialog">
+            <div class="modal-header">
+            <h3 style="color: ${textColor}">My Wishlist</h3>
+            <p style="color: ${textColor}">${text !== "" ? text : "My Wishlist allows you to keep track of all of your favorites and shopping activity whether you're on your computer, phone, or tablet. You won't have to waste time searching all over again for that item you loved on your phone the other day - it's all here in one place!<br/>And you must have an account and be logged in to save items to your wishlist."}</p>
+            </div>
+            <div class="modal-body">
+            <div class="auth-items">
+                <div class="auth-item">
+                <h4>LOGIN</h4>
+                ${loginFormString}
+                </div>
+                <div class="auth-item">
+                <h4>CREATE AN ACCOUNT</h4>
+                ${registerFormString}
+                </div>
+            </div>
+            </div>
+        </div>
+        </div>`)
+    
+        
+        const closeLoginModal = () => {
+            loginModal.remove()
+        }
+    
+        const openLoginModal = () => {
+            $("body").append(loginModal);
+            let st = JSON.parse(getCookie("storeSetting"));
+            const textColor = st !== null ? st.loginPromptSettings.color : ""
+            const text = st !== null ? st.loginPromptSettings.promptText && st.loginPromptSettings.promptText !== "" ? st.loginPromptSettings.promptText : "" : ""
+            // force re-new, for new update (localstorage)
+            const modalHeader = loginModal.find('.modal-header')
+            if(modalHeader && text !== "") {
+                modalHeader.html('');
+                const newContent = $(`
+                    <h3 style="color:${textColor}">My Wishlist</h3>
+                    <p style="color:${textColor}">${text}</p>`);
+                modalHeader.append(newContent);
+            }
+            closeModalButton.prependTo(".login-modal#modal-dialog")
+            loginModal.show()
+        }
+        
+        $(document).on('click', '#close-modal', () => loginModal.remove())
+        // //-- end login popup
+
+    });   
+
 </script>
