@@ -12,13 +12,19 @@
         const storeDomain = `https://{{ shop.domain }}`;
         const shopEmail = `{{ shop.email }}`;
         const shopName = `{{ shop.name }}`
+
+        const first_name = `{{ customer.first_name }}`;
+        const last_name = `{{ customer.last_name }}`;
+        const email =  `{{ customer.email }}`;
+        const userId = `{{ customer.id }}`;
+
         {% comment %} console.log('info =>',{
             shopName: shopName,
             shopEmail: shopEmail,
             customerId: customerId,
             storeDomain: storeDomain,
         }) {% endcomment %}
-        const s = `{{ product.variants }}`
+
         const appUrl = "http://staging.twixo.io/api/v1";
         const localUrl = "http://localhost:3000/api/v1";
         
@@ -45,12 +51,62 @@
                 </svg>`,
             share: `
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M12 10.7202C11.4933 10.7202 11.04 10.9202 10.6933 11.2335L5.94 8.46683C5.97333 8.3135 6 8.16016 6 8.00016C6 7.84016 5.97333 7.68683 5.94 7.5335L10.64 4.7935C11 5.12683 11.4733 5.3335 12 5.3335C13.1067 5.3335 14 4.44016 14 3.3335C14 2.22683 13.1067 1.3335 12 1.3335C10.8933 1.3335 10 2.22683 10 3.3335C10 3.4935 10.0267 3.64683 10.06 3.80016L5.36 6.54016C5 6.20683 4.52667 6.00016 4 6.00016C2.89333 6.00016 2 6.8935 2 8.00016C2 9.10683 2.89333 10.0002 4 10.0002C4.52667 10.0002 5 9.7935 5.36 9.46016L10.1067 12.2335C10.0733 12.3735 10.0533 12.5202 10.0533 12.6668C10.0533 13.7402 10.9267 14.6135 12 14.6135C13.0733 14.6135 13.9467 13.7402 13.9467 12.6668C13.9467 11.5935 13.0733 10.7202 12 10.7202Z" fill="white"/>
+                    <path d="M12 10.7202C11.4933 10.7202 11.04 10.9202 10.6933 11.2335L5.94 8.46683C5.97333 8.3135 6 8.16016 6 8.00016C6 7.84016 5.97333 7.68683 5.94 7.5335L10.64 4.7935C11 5.12683 11.4733 5.3335 12 5.3335C13.1067 5.3335 14 4.44016 14 3.3335C14 2.22683 13.1067 1.3335 12 1.3335C10.8933 1.3335 10 2.22683 10 3.3335C10 3.4935 10.0267 3.64683 10.06 3.80016L5.36 6.54016C5 6.20683 4.52667 6.00016 4 6.00016C2.89333 6.00016 2 6.8935 2 8.00016C2 9.10683 2.89333 10.0002 4 10.0002C4.52667 10.0002 5 9.7935 5.36 9.46016L10.1067 12.2335C10.0733 12.3735 10.0533 12.5202 10.0533 12.6668C10.0533 13.7402 10.9267 14.6135 12 14.6135C13.0733 14.6135 13.9467 13.7402 13.9467 12.6668C13.9467 11.5935 13.0733 10.7202 12 10.7202Z"/>
                 </svg>`,
             search: `
                 <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
                     <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-                </svg>`
+                </svg>`,
+            shoppingBag: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <g clip-path="url(#clip0_178_22442)">
+                        <path d="M11.1691 6.84615V3.38462C11.1691 2.61957 10.8353 1.88585 10.241 1.34488C9.64676 0.803914 8.84077 0.5 8.00037 0.5C7.15997 0.5 6.35399 0.803914 5.75973 1.34488C5.16548 1.88585 4.83163 2.61957 4.83163 3.38462V6.84615M14.4274 5.31308L15.4947 14.5438C15.5538 15.0554 15.1144 15.5 14.5491 15.5H1.45164C1.31831 15.5001 1.18643 15.4747 1.06459 15.4254C0.942743 15.3761 0.833651 15.3041 0.744398 15.2139C0.655145 15.1237 0.587727 15.0175 0.546525 14.902C0.505323 14.7866 0.491259 14.6646 0.505244 14.5438L1.57332 5.31308C1.59796 5.10043 1.7082 4.90362 1.8828 4.76058C2.0574 4.61755 2.28399 4.53842 2.51887 4.53846H13.4819C13.9686 4.53846 14.3767 4.87308 14.4274 5.31308ZM5.14851 6.84615C5.14851 6.92266 5.11512 6.99603 5.0557 7.05013C4.99627 7.10422 4.91567 7.13462 4.83163 7.13462C4.74759 7.13462 4.66699 7.10422 4.60757 7.05013C4.54814 6.99603 4.51476 6.92266 4.51476 6.84615C4.51476 6.76965 4.54814 6.69628 4.60757 6.64218C4.66699 6.58808 4.74759 6.55769 4.83163 6.55769C4.91567 6.55769 4.99627 6.58808 5.0557 6.64218C5.11512 6.69628 5.14851 6.76965 5.14851 6.84615ZM11.486 6.84615C11.486 6.92266 11.4526 6.99603 11.3932 7.05013C11.3338 7.10422 11.2532 7.13462 11.1691 7.13462C11.0851 7.13462 11.0045 7.10422 10.945 7.05013C10.8856 6.99603 10.8522 6.92266 10.8522 6.84615C10.8522 6.76965 10.8856 6.69628 10.945 6.64218C11.0045 6.58808 11.0851 6.55769 11.1691 6.55769C11.2532 6.55769 11.3338 6.58808 11.3932 6.64218C11.4526 6.69628 11.486 6.76965 11.486 6.84615Z" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_178_22442">
+                            <rect width="16" height="16""/>
+                        </clipPath>
+                    </defs>
+                </svg>`,
+            dres: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <g clip-path="url(#clip0_178_22566)">
+                        <path d="M16.7733 16.3828C16.771 16.3761 16.7681 16.3696 16.7647 16.3633L13.2116 8.79609L14.8132 6.28203C14.8163 6.27752 14.8192 6.27283 14.8218 6.26797C14.9383 6.07373 14.9998 5.8515 14.9998 5.625C14.9998 5.3985 14.9383 5.17627 14.8218 4.98203C14.8147 4.96953 14.8062 4.95703 14.7983 4.94531L13.1249 2.55469V0.625C13.1249 0.45924 13.0591 0.300269 12.9418 0.183058C12.8246 0.065848 12.6657 0 12.4999 0C12.3341 0 12.1752 0.065848 12.058 0.183058C11.9408 0.300269 11.8749 0.45924 11.8749 0.625V2.53281L11.464 3.04688C11.2883 3.26643 11.0655 3.44366 10.8121 3.56546C10.5587 3.68725 10.2811 3.75049 9.9999 3.75049C9.71873 3.75049 9.44115 3.68725 9.18772 3.56546C8.9343 3.44366 8.7115 3.26643 8.53584 3.04688L8.1249 2.53281V0.625C8.1249 0.45924 8.05906 0.300269 7.94185 0.183058C7.82464 0.065848 7.66566 0 7.4999 0C7.33414 0 7.17517 0.065848 7.05796 0.183058C6.94075 0.300269 6.8749 0.45924 6.8749 0.625V2.55469L5.20147 4.94531C5.19365 4.95703 5.18506 4.96953 5.17803 4.98203C5.06153 5.17627 4.99999 5.3985 4.99999 5.625C4.99999 5.8515 5.06153 6.07373 5.17803 6.26797C5.18061 6.27283 5.18348 6.27752 5.18662 6.28203L6.78819 8.79609L3.23506 16.3633C3.23173 16.3696 3.22886 16.3761 3.22647 16.3828C3.14505 16.5729 3.11205 16.7802 3.13044 16.9862C3.14883 17.1921 3.21803 17.3903 3.33184 17.563C3.44565 17.7356 3.60051 17.8773 3.78255 17.9754C3.96459 18.0735 4.16812 18.1249 4.3749 18.125H15.6249C15.8318 18.125 16.0354 18.0737 16.2175 17.9757C16.3997 17.8777 16.5546 17.736 16.6685 17.5633C16.7824 17.3906 16.8517 17.1924 16.8701 16.9864C16.8886 16.7803 16.8556 16.573 16.7741 16.3828H16.7733ZM6.2499 5.625L7.5335 3.79453L7.55928 3.82734C7.85204 4.19345 8.22341 4.48901 8.64589 4.69211C9.06837 4.89522 9.53114 5.00068 9.9999 5.00068C10.4687 5.00068 10.9314 4.89522 11.3539 4.69211C11.7764 4.48901 12.1478 4.19345 12.4405 3.82734L12.4663 3.79453L13.7499 5.625L12.1577 8.125H7.84287L6.2499 5.625ZM4.3749 16.875L7.896 9.375H12.1022L15.6249 16.875H4.3749Z"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_178_22566">
+                            <rect width="20" height="20"/>
+                        </clipPath>
+                    </defs>
+                </svg>`,
+            duplicate: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <path d="M15.8984 5H7.22656C5.99687 5 5 5.99687 5 7.22656V15.8984C5 17.1281 5.99687 18.125 7.22656 18.125H15.8984C17.1281 18.125 18.125 17.1281 18.125 15.8984V7.22656C18.125 5.99687 17.1281 5 15.8984 5Z" stroke="white" stroke-linejoin="round"/>
+                    <path d="M14.9805 5L15 4.0625C14.9984 3.48285 14.7674 2.9274 14.3575 2.51753C13.9476 2.10765 13.3922 1.87665 12.8125 1.875H4.375C3.71256 1.87696 3.07781 2.14098 2.6094 2.6094C2.14098 3.07781 1.87696 3.71256 1.875 4.375V12.8125C1.87665 13.3922 2.10765 13.9476 2.51753 14.3575C2.9274 14.7674 3.48285 14.9984 4.0625 15H5M11.5625 8.4375V14.6875M14.6875 11.5625H8.4375" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            `,
+            drop: `
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                    <g clip-path="url(#clip0_178_22624)">
+                        <path d="M9.129 0L11.103 0.005C11.881 0.099 12.563 0.465 13.125 1.083C13.584 1.587 13.825 2.173 13.839 2.811H19.314C19.4968 2.81206 19.6718 2.88563 19.8004 3.01557C19.929 3.1455 20.0008 3.32117 20 3.504C20.0004 3.59448 19.983 3.68415 19.9487 3.7679C19.9144 3.85164 19.864 3.92782 19.8003 3.99208C19.7366 4.05634 19.6609 4.10742 19.5774 4.14241C19.494 4.1774 19.4045 4.19561 19.314 4.196L17.478 4.195V15.822C17.478 18.365 16.529 20 14.437 20H5.419C3.327 20 2.393 18.374 2.393 15.822V4.195H0.686001C0.503614 4.19421 0.328982 4.12113 0.200389 3.99178C0.0717962 3.86244 -0.000265707 3.68739 7.36243e-07 3.505C7.36243e-07 3.122 0.307001 2.813 0.686001 2.813H6.156C6.17 2.299 6.361 1.778 6.71 1.263C7.23 0.495 8.042 0.074 9.129 0ZM16.106 4.195H3.764V15.822C3.764 17.71 4.284 18.616 5.419 18.616H14.437C15.576 18.616 16.107 17.702 16.107 15.822L16.106 4.195ZM6.716 6.34C7.094 6.34 7.401 6.65 7.401 7.032V15.082C7.4014 15.1725 7.38397 15.2622 7.3497 15.3459C7.31544 15.4296 7.26502 15.5058 7.20132 15.5701C7.13762 15.6343 7.06189 15.6854 6.97844 15.7204C6.895 15.7554 6.80548 15.7736 6.715 15.774C6.53244 15.7729 6.35776 15.6995 6.22933 15.5697C6.10089 15.44 6.0292 15.2646 6.03 15.082V7.032C6.03 6.65 6.338 6.34 6.716 6.34ZM9.442 6.34C9.822 6.34 10.128 6.65 10.128 7.032V15.082C10.1284 15.1725 10.111 15.2622 10.0767 15.3459C10.0424 15.4296 9.99202 15.5058 9.92832 15.5701C9.86462 15.6343 9.78889 15.6854 9.70544 15.7204C9.622 15.7554 9.53248 15.7736 9.442 15.774C9.25944 15.7729 9.08476 15.6995 8.95633 15.5697C8.82789 15.44 8.7562 15.2646 8.757 15.082V7.032C8.757 6.65 9.064 6.34 9.442 6.34ZM12.17 6.34C12.548 6.34 12.855 6.65 12.855 7.032V15.082C12.8558 15.2646 12.7841 15.44 12.6557 15.5697C12.5272 15.6995 12.3526 15.7729 12.17 15.774C12.0795 15.7736 11.99 15.7554 11.9066 15.7204C11.8231 15.6854 11.7474 15.6343 11.6837 15.5701C11.62 15.5058 11.5696 15.4296 11.5353 15.3459C11.501 15.2622 11.4836 15.1725 11.484 15.082V7.032C11.4835 6.84935 11.5554 6.67393 11.684 6.54421C11.8126 6.4145 11.9873 6.34106 12.17 6.34ZM9.176 1.382C8.534 1.427 8.111 1.646 7.842 2.044C7.644 2.335 7.545 2.587 7.529 2.812L12.467 2.811C12.453 2.52 12.338 2.264 12.115 2.019C11.769 1.639 11.385 1.433 11.022 1.384L9.176 1.382Z"/>
+                    </g>
+                    <defs>
+                        <clipPath id="clip0_178_22624">
+                            <rect width="20" height="20" />
+                        </clipPath>
+                    </defs>
+                </svg>`,
+            link: `
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <g clip-path="url(#clip0_179_48976)">
+                  <path d="M9.52533 8.11093C9.26287 7.84843 9.10707 7.49794 9.08804 7.12723C9.06902 6.75652 9.18812 6.39192 9.42233 6.10393L9.52533 5.98993L11.6463 3.86793C12.7549 2.75271 14.257 2.11727 15.8294 2.09834C17.4017 2.0794 18.9187 2.67849 20.0538 3.76669C21.1889 4.85489 21.8515 6.34521 21.8989 7.91697C21.9463 9.48873 21.3748 11.0163 20.3073 12.1709L20.1323 12.3539L18.0103 14.4749C17.7382 14.7458 17.3726 14.902 16.9888 14.9114C16.605 14.9208 16.2322 14.7826 15.9472 14.5254C15.6621 14.2682 15.4866 13.9115 15.4567 13.5287C15.4268 13.146 15.5447 12.7663 15.7863 12.4679L15.8893 12.3539L18.0103 10.2319C18.5574 9.68073 18.8695 8.93884 18.8808 8.16229C18.8922 7.38575 18.6019 6.63506 18.0711 6.06813C17.5403 5.5012 16.8103 5.1622 16.0347 5.12244C15.2591 5.08268 14.4983 5.34525 13.9123 5.85493L13.7683 5.98993L11.6463 8.11093C11.365 8.39214 10.9836 8.55011 10.5858 8.55011C10.1881 8.55011 9.80662 8.39214 9.52533 8.11093ZM8.81833 15.1819C8.55587 14.9194 8.40007 14.5689 8.38104 14.1982C8.36202 13.8275 8.48112 13.4629 8.71533 13.1749L8.81833 13.0609L13.0613 8.81793C13.3331 8.54516 13.6994 8.38736 14.0843 8.3772C14.4692 8.36703 14.8433 8.50528 15.1291 8.76333C15.4149 9.02137 15.5905 9.37944 15.6196 9.7634C15.6487 10.1474 15.529 10.5278 15.2853 10.8259L15.1823 10.9399L10.9393 15.1819C10.658 15.4631 10.2766 15.6211 9.87883 15.6211C9.48109 15.6211 9.09962 15.4631 8.81833 15.1819ZM3.86833 20.1319C2.77428 19.0377 2.14527 17.5631 2.11266 16.0161C2.08005 14.4691 2.64637 12.9693 3.69333 11.8299L3.86833 11.6459L5.99033 9.52593C6.26243 9.25508 6.62803 9.09887 7.01185 9.08947C7.39566 9.08008 7.76847 9.21821 8.05349 9.47543C8.33852 9.73264 8.51407 10.0894 8.54399 10.4721C8.57391 10.8549 8.45593 11.2345 8.21433 11.5329L8.11133 11.6469L5.99033 13.7669C5.43995 14.3174 5.12511 15.0603 5.1123 15.8386C5.09949 16.617 5.38972 17.3698 5.92169 17.9381C6.45366 18.5064 7.1857 18.8457 7.96318 18.8843C8.74067 18.9229 9.50271 18.6578 10.0883 18.1449L10.2323 18.0099L12.3543 15.8899C12.6264 15.6191 12.992 15.4629 13.3758 15.4535C13.7597 15.4441 14.1325 15.5822 14.4175 15.8394C14.7025 16.0966 14.8781 16.4534 14.908 16.8361C14.9379 17.2189 14.8199 17.5985 14.5783 17.8969L14.4753 18.0099L12.3543 20.1319C11.7972 20.6892 11.1357 21.1312 10.4077 21.4328C9.67965 21.7344 8.89935 21.8896 8.11133 21.8896C7.32332 21.8896 6.54302 21.7344 5.815 21.4328C5.08698 21.1312 4.4255 20.6892 3.86833 20.1319Z" />
+                </g>
+                <defs>
+                  <clipPath id="clip0_179_48976">
+                    <rect width="24" height="24" fill="white" transform="matrix(0 -1 1 0 0 24)"/>
+                  </clipPath>
+                </defs>
+              </svg>`,
         }
 
         myWishlistContent = $('#my-wishlist-content');
@@ -94,7 +150,6 @@
         });
       
         dcCapsule.addEventListener('click', function (event) {
-            console.log("dcCapsule =>",event.target)
             if (event.target.tagName === 'A') {
                 var optionText = event.target.textContent;
                 dropCapsule.querySelector('span').textContent = optionText;
@@ -584,6 +639,7 @@
                 };
                 $.ajax(requestOptions).done(function (response) {
                     const res = response.data[0];
+                    console.log("res =>",res)
                     if(res) {
                         setCookie('storeSetting', JSON.stringify(res), 1);
                         setLocalStorage("storeSetting", res)
@@ -591,11 +647,11 @@
                     let wishlistButton = $('#wishlist-button');
     
                     if (res && wishlistButton.length > 0) {
-                        if ([1, 3, 5].includes(res.buttonSettings.type)) {
-                            wishlistButton.html('<svg style="fill: ' + res.buttonSettings.colorAfterAdded + '" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.3c4.2-4.8 8.7-9.2 13.5-13.3c3.7-3.2 7.5-6.2 11.5-9c0 0 0 0 0 0C313.1 47 353.4 37.9 392.8 45.4C462 58.6 512 119.1 512 189.5v3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c0 0-.1-.1-.1-.1c0 0 0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5v3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2v-3.3c0-47.3-33.6-88-80.1-96.9c-34-6.5-69 5.4-92 31.2c0 0 0 0-.1 .1s0 0-.1 .1l-17.8 20c-.3 .4-.7 .7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7" /></svg>');
+                        if ([1, 3, 5].includes(res?.buttonSettings?.type)) {
+                            wishlistButton.html('<svg style="fill: ' + res?.buttonSettings?.colorAfterAdded + '" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512"><path d="M225.8 468.2l-2.5-2.3L48.1 303.2C17.4 274.7 0 234.7 0 192.8v-3.3c0-70.4 50-130.8 119.2-144C158.6 37.9 198.9 47 231 69.6c9 6.4 17.4 13.8 25 22.3c4.2-4.8 8.7-9.2 13.5-13.3c3.7-3.2 7.5-6.2 11.5-9c0 0 0 0 0 0C313.1 47 353.4 37.9 392.8 45.4C462 58.6 512 119.1 512 189.5v3.3c0 41.9-17.4 81.9-48.1 110.4L288.7 465.9l-2.5 2.3c-8.2 7.6-19 11.9-30.2 11.9s-22-4.2-30.2-11.9zM239.1 145c-.4-.3-.7-.7-1-1.1l-17.8-20c0 0-.1-.1-.1-.1c0 0 0 0 0 0c-23.1-25.9-58-37.7-92-31.2C81.6 101.5 48 142.1 48 189.5v3.3c0 28.5 11.9 55.8 32.8 75.2L256 430.7 431.2 268c20.9-19.4 32.8-46.7 32.8-75.2v-3.3c0-47.3-33.6-88-80.1-96.9c-34-6.5-69 5.4-92 31.2c0 0 0 0-.1 .1s0 0-.1 .1l-17.8 20c-.3 .4-.7 .7-1 1.1c-4.5 4.5-10.6 7-16.9 7s-12.4-2.5-16.9-7" /></svg>');
                         }
     
-                        if ([1, 2, 3, 4].includes(res.buttonSettings.type)) {
+                        if ([1, 2, 3, 4].includes(res?.buttonSettings?.type)) {
                             const btnLabel = res.buttonSettings.label === "" ? "Add to Wishlist &nbsp" : res.buttonSettings.label + " &nbsp"
                             const divElement = $('<div>').html(btnLabel).css({
                                 fontSize: "14px",
@@ -625,7 +681,7 @@
                     const headerIcons = document.querySelector('.header__icons');
                     if (headerIcons) {
     
-                        if (res && res.launcherSettings.wishlistDisplayed.toLowerCase() === 'with icon') {
+                        if (res && res?.launcherSettings?.wishlistDisplayed.toLowerCase() === 'with icon') {
                             newHTML = `
                                 <a style="margin-left: 1.2rem" class="header__icon header__icon--wishlist link focus-inset" id="my-wishlist-menu">
                                 <svg xmlns="http://www.w3.org/2000/svg" height="2rem" viewBox="0 0 512 512" style="font-size: 12px">
@@ -638,7 +694,7 @@
                         } else {
                             newHTML = `
                                 <a style="margin-left: 1.2rem" class="header__icon header__icon--wishlist link focus-inset" id="my-wishlist-menu">
-                                <span class="">${res.launcherSettings.name === "" ? "Wishlist" : res.launcherSettings.name}</span>
+                                <span class="">${res?.launcherSettings?.name === "" ? "Wishlist" : res?.launcherSettings?.name}</span>
                                 </a>
                             `;
                         }
@@ -673,48 +729,54 @@
                     "timeout": 0,
                 };
     
-                $.ajax(requestOptions).done(function (response) {
-                    const res = response.data.items;
-                    if (res) {
-                        const simplifiedWishlist = res.map(item => ({
-                            _id: item._id,
-                            store: item.store,
-                            name: item.name,
-                            products: item.products.map(product => ({
-                                _id: product._id,
-                                productId: product.productId,
-                                productName: product.productName,
-                                productPrice: product.productPrice,
-                                productSize: product.productSize,
-                                productImage: removeQueryString(product.productImage),
-                                capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
-                            })),
-                            comments: item.comments.map(comment => ({
-                                comment: comment.comment,
-                                createdAt: comment.createdAt,
-                                commentedBy: {
-                                    first_name: comment.commentedBy.first_name,
-                                    last_name: comment.commentedBy.last_name,
-                                    email: comment.commentedBy.email,
-                                    userId: comment.commentedBy.userId,
-                                }
-                            })), 
-                        }));
-                        setLocalStorage('wishlist', simplifiedWishlist);
+                return new Promise((resolve, reject) => {
+                    $.ajax(requestOptions)
+                        .done(function (response) {
+                            const res = response.data.items;
+                            if (res) {
+                                const simplifiedWishlist = res.map(item => ({
+                                    _id: item._id,
+                                    store: item.store,
+                                    name: item.name,
+                                    products: item.products.map(product => ({
+                                        _id: product._id,
+                                        productId: product.productId,
+                                        productName: product.productName,
+                                        productPrice: product.productPrice,
+                                        productSize: product.productSize,
+                                        productImage: removeQueryString(product.productImage),
+                                        capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
+                                    })),
+                                    comments: item.comments.map(comment => ({
+                                        comment: comment.comment,
+                                        createdAt: comment.createdAt,
+                                        commentedBy: {
+                                            first_name: comment.commentedBy.first_name,
+                                            last_name: comment.commentedBy.last_name,
+                                            email: comment.commentedBy.email,
+                                            userId: comment.commentedBy.userId,
+                                        }
+                                    })), 
+                                }));
+                                setLocalStorage('wishlist', simplifiedWishlist);
 
-                        //deleteCookie("wishlist");
-                        //setCookie('wishlist', JSON.stringify(simplifiedWishlist), 1); // Save wishlist to a cookie that expires in 1 days
-                        resetDropdown('wishlist')
-                        simplifiedWishlist.forEach((e) => {
-                            injectDropdown('wishlist', e)
-                        })
-            
-    
-                    }
+                                resetDropdown('wishlist')
+                                simplifiedWishlist.forEach((e) => {
+                                    injectDropdown('wishlist', e)
+                                })
+                                resolve(response);
+                            }else{
+                                reject(new Error("No data in the response"));
+                            }
+                        }).fail(function (jqXHR, textStatus, errorThrown) {
+                            // Reject the promise with the error details
+                            reject(new Error(`AJAX request failed: ${textStatus}, ${errorThrown}`));
+                        });
                 });
     
             } catch (error) {
                 console.error('Error:', error);
+                throw error;
             }
         }
     
@@ -871,7 +933,6 @@
                 return result;
             }, {});
         }
-
         // // -- start wislist list --
         const openWishlistList = () => {
             //const wishlistData = JSON.parse(getCookie('wishlist'));
@@ -941,6 +1002,22 @@
             wishlistList.show();
         }
 
+        const createConfirm = () => {
+            const modal = $(`
+                <div id="remove-product-modal" class="modal" style="display: block">
+                    <div class="modal-content" style="width: 385px;">
+                      <div class="modal-body pt-0 text-center">
+                        <p>Are you sure want to remove the item? You cannot undo this step..</p>
+                        <div class="confirm flex gap-4 w-1/2 mx-auto">
+                            <button id="confirm-no" class="p-2">No</button>
+                            <button id="confirm-yes" class="p-2">Yes</button>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            `);
+            return modal;
+        }
         const createWishlistList = () => {
             const wishlistList = $(`<div id="my-wishlist-modal" class="modal">
                 <div id="modal-dialog" class="my-wishlist-modal pt-0">
@@ -993,9 +1070,33 @@
                                 </div>
                             </div>
                             <div class="flex justify-end align-center gap-4">
-                                <div class="btn bg-white">SHARED</div>
-                                <div class="btn bg-black text-white">ADD ALL TO CART</div>
-                                <div class="">Manage Wishlist</div>
+                                <div class="btn btn-share bg-white">
+                                    <div class="share flex">
+                                        ${icons.share}
+                                    </div>
+                                    SHARE</div>
+                                <div class="btn btn-add-to-cart bg-black text-white">
+                                    <div class="bag flex">
+                                        ${icons.shoppingBag}
+                                    </div>
+                                    ADD ALL TO CART</div>
+                                <div id="manage-wishlist" class="select-botton-container min-w-0 relative">
+                                    <div class="btn border-0">Manage Wishlist</div>
+                                    <div id="manage-wishlist-content" class="dropdown-content manage-wishlist-content w-full">
+                                        <a data-id="Add Item">
+                                            <div class="bullet rounded-full">${icons.dres}</div> 
+                                            Add Item
+                                        </a>
+                                        <a data-id="Duplicate Wishlist">
+                                            <div class="bullet rounded-full">${icons.duplicate}</div> 
+                                            Duplicate Wishlist
+                                        </a>
+                                        <a data-id="Remove Wishlist" class="remove">
+                                            <div class="bullet rounded-full">${icons.drop}</div> 
+                                            Remove Wishlist 
+                                        </a>
+                                    </div>
+                                </div>
             
                             </div>
                         </div>
@@ -1053,28 +1154,100 @@
         
             return wishlistList;
         };
-        const createNotification = () => {
+        const createNotification = (content) => {
             const modal = $(`
-                <div id="notification" class="modal">
-                    <div id="notification-modal-dialog" style="top: 13%; left: 0; transform: unset; width: 544px">
-                        <div class="flex">
-                            {% if product.images.size > 0 %}
-                            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
-                            {% endif %}
-                            <div class="block px-3 relative w-full">
-                                <p>
-                                    <span class="font-bold">
-                                        {{ product.title | escape }}
-                                    </span>
-                                    <span id="sizeAdd" class="font-bold"> - Size : l
-                                    </span>
-                                    Your comment has been successfully submitted!
-                
-                                </p>
-                                <div id="close-notification" class="top-0 right-0 absolute cursor-pointer">
+                <div id="notification" class="modal" style="display: block">
+                    <div class="modal-content bg-white p-5" style="top: 13%; left: 0; transform: unset; width: 544px; margin: 0; background: #F5F5F5;">
+                        <div class="modal-body">
+                            <div class="block relative">
+                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
                                     ${icons.close}
                                 </div>
                             </div>
+                            ${content}
+                        </div>
+                    </div>
+                </div>
+            `);
+            return modal;
+        }
+
+        const createDuplicate = (name="") => {
+            const modal = $(`
+                <div id="duplicate-modal" class="modal" style="display: block">
+                    <div class="modal-content bg-white p-5" style="width: 430px">
+                        <div class="modal-body">
+                            <div class="block relative">
+                                <h4 class="h4 m-0 w-90 title font-bold">
+                                    Duplicate Wishlist
+                                </h4>
+                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
+                                    ${icons.close}
+                                </div>
+                            </div>
+                    
+                            <div class="">
+                                <label class="px-0 label">Wishlist Name</label>
+                                <input type="text" id="txtWishlist" required class="w-full" value="${name} Copy" />
+                            </div>
+                            <div class="confirm flex gap-4 w-1/2 mx-auto mt-5">
+                                <button id="btn-cancel" class="mt-8 py-3 px-5">CANCEL</button>
+                                <button id="btn-save" class="mt-8  py-3 btn-black px-5">SAVE</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `);
+            return modal;
+        }
+
+        const createShare = (name="") => {
+            const modal = $(`
+                <div id="share-modal" class="modal" style="display: block">
+                    <div class="modal-content bg-white p-5" style="width: 430px">
+                        <div class="modal-body">
+                            <div class="block relative">
+                                <p class="h4 m-0 w-90 title font-bold">
+                                    Share Wishlist Via Email
+                                </p>
+                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
+                                    ${icons.close}
+                                </div>
+                            </div>
+                    
+                            <div class="mt-5">
+                                <label class="px-0 label">Sender Name</label>
+                                <input type="text" id="txtSenderr" required class="w-full" value="${name}" />
+                            </div>
+                            <div class="mt-5">
+                                <label class="px-0 label">Receipent Email Address*</label>
+                                <input type="text" id="txtReceipent" required class="w-full" placeHolder="Enter receipent email address..." />
+                            </div>
+                            <div class="mt-5">
+                                <label class="px-0 label">Message</label>
+                                <textarea id="txtMessage" placeholder="Enter your message..." required class="w-full"></textarea>
+                            </div>            
+                            <div class="w-full mt-5">
+                                <button id="btn-share" class="mt-8 py-3 btn-black px-5">SHARE WISHLIST</button>
+                                <div class="loader"></div>
+                            </div>
+                            <hr class="my-12">
+                            <div class="w-full text-center">
+                                <label class="mx-0 label">Or Share Via</label>
+                            </div>
+                            <div class="w-full flex mt-5 justify-between social-media fill-black">
+                                <div class="flex gap-2 flex-wrap align-center">
+                                    ${icons.link}
+                                    <label class="label">COPY LINK</label>
+                                 </div>
+                                <div class="flex gap-2 flex-wrap align-center">
+                                    <label class="label">FACEBOOK</label>
+                                </div>
+                                <div class="flex gap-2 flex-wrap align-center">
+                                    <label class="label">TWITTER</label>
+                                </div>
+                            </div>
+                
                         </div>
                     </div>
                 </div>
@@ -1167,10 +1340,12 @@
         
         const setupDropdownClickEvent = (dropdown, dropdownContent, callback) => {
             dropdown.on('click', () => {
+                console.log("dropdown click =>",dropdown)
                 dropdownContent.css('display', dropdownContent.css('display') === 'block' ? 'none' : 'block');
             });
         
             dropdownContent.on('click', (event) => {
+                console.log("dropdownContent event.target =>",event.target)
                 const dataId = event.target.getAttribute('data-id');
                 if (event.target.tagName === 'A') {
                     const optionText = event.target.textContent;
@@ -1272,6 +1447,7 @@
                 }
             });
         }
+
         const showWishlistDetail = (wishlistId) => {
             const cWishlist = $('#dropdown-wishlist');
             const dWishlist = cWishlist.find('.dropbtn');
@@ -1280,7 +1456,6 @@
             const cCapsule = $('#dropdown-capsule');
             const dcCapsule = cCapsule.find('.dropdown-content');
         
-            //const wishlistData = JSON.parse(getCookie('wishlist'));
             const wishlistData = getLocalStorage('wishlist');
             const wishlistDetail = wishlistData.find((e) => e._id == wishlistId);
             console.log('wishlistDetail =>',wishlistDetail)
@@ -1299,13 +1474,14 @@
                         const comment = $(this).val().toLowerCase();
                         if(comment.length > 3) myWishlistDetail.find('#submitComment').prop('disabled', false);
                     });
-        
-    
                 }
             }
-        
+            console.log("wishlistDetail.products =>",wishlistDetail.products)
+
             const groupedData = groupByProperty(wishlistDetail.products, 'capsule');
+            console.log("groupedData =>",groupedData)
             const capsuleData = Object.keys(groupedData);
+            console.log("capsuleData =>",capsuleData)
             if(capsuleData) {
                 setCookie('capsuleData', JSON.stringify(capsuleData), 1);
                 setupDropdownContent(dcCapsule, capsuleData);
@@ -1336,7 +1512,7 @@
                                 <div class="wishlist-item bg-white shadow-md flex flex-col w-full h-full justify-center mb-0">
                                     <div class="p-3">
                                         <div class="flex justify-between pb-3 w-full mb-auto">
-                                            <div class="btn-close cursor-pointer ml-auto" data-product-id="${product._id}">
+                                            <div class="btn-close remove-product cursor-pointer ml-auto" data-product-id="${product._id}">
                                                 ${icons.close}
                                             </div>
                                         </div>
@@ -1363,21 +1539,9 @@
                     dtlContent.append(wrap);
                 }
             }
-            $('.btn-close').on('click', async function (event) {
-                const productId = $(this).data('product-id');
-                const confirm = $(`
-                    <div id="remove-product-modal" class="modal" style="display: block">
-                        <div class="modal-content" style="width: 385px;">
-                          <div class="modal-body pt-0 text-center">
-                            <p>Are you sure want to remove the item? You cannot undo this step..</p>
-                            <div class="confirm flex gap-4 w-1/2 mx-auto">
-                                <button id="confirm-no" class="p-2">No</button>
-                                <button id="confirm-yes" class="p-2">Yes</button>
-                            </div>
-                          </div>
-                        </div>
-                    </div>                    
-                `);
+            $('.wishlist-item .remove-product').on('click', async function (event) {
+                const idProducts = $(this).data('product-id');
+                const confirm = createConfirm();
 
                 $('body').append(confirm);
                 confirm.find("button").on('click', async function (event) {
@@ -1386,28 +1550,23 @@
                     if (buttonId === 'confirm-yes') {
                         
                         const obj = {
-                            wishlistId: wishlistId,
-                            productId : productId,
+                            store: storeDomain,
+                            idProducts : [idProducts],
                         }
 
-                        const settings = {
-                            "url": `${localUrl}/${wishlistId}/product/?product_id=${productId}`,
-                            "method": "DELETE",
-                            "timeout": 0,
-                          };
-                          
-                          $.ajax(settings).done(function (response) {
-                            console.log("response =>",response);
-                          });
-        
-                        console.log("obj =>",obj)
+                        const requestOptions = {
+                            method: 'POST',
+                            body: JSON.stringify(obj),
+                            redirect: 'follow'
+                        };        
 
-
+                        const response = await fetch(`${appUrl}/wishlist/${wishlistId}/product/delete`, requestOptions);
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
         
-                        getWishlist(customerId, storeDomain);
-        
-                        //console.log("result =>",result)
-        
+                        const gw = await getWishlist(customerId, storeDomain);
+                        if(gw) showWishlistDetail(wishlistId);
                     }
                 })
             })
@@ -1506,16 +1665,203 @@
                     const commentsCount = result.data.comments.length > 0 ? result.data.comments.length : 0
                     myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
 
-                    const newComment = renderComment(lastComment)
-                    myWishlistDetail.find("#list-comment").append(newComment)
-
-
-                    {% comment %} $('body').append(notification);
-                    notification.find('#notification-modal-dialog').addClass('animate__animated', 'animate__slideInDown');
-                    notification.css({display: "block"});{% endcomment %}
+                    const newComment = renderComment(lastComment);
+                    myWishlistDetail.find("#list-comment").append(newComment);
     
                 }, 3000);
             });
+
+            const dManage = myWishlistDetail.find('#manage-wishlist');
+            const dcManage = dManage.find('.dropdown-content');
+            dManage.on('click', () => {
+                dcManage.css('display', dcManage.css('display') === 'block' ? 'none' : 'block');
+            });
+            dcManage.on('click', (event) => {
+                const dataId = event.target.getAttribute('data-id');
+                if(dataId === "Remove Wishlist") {
+                    const confirm = createConfirm();
+                    $('body').append(confirm);
+                    confirm.find("button").on('click', async function (event) {
+                        const buttonId = event.target.id;                        
+                        confirm.remove();
+                        if (buttonId === 'confirm-yes') {
+                            const requestOptions = {
+                                method: 'POST',
+                                body: JSON.stringify({store: storeDomain}),
+                                redirect: 'follow'
+                            };
+                            const response = await fetch(`${appUrl}/wishlist/${wishlistId}/delete`, requestOptions);
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                            await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
+                            const gw = await getWishlist(customerId, storeDomain);
+                            if(gw) {
+                                $("#my-wishlist-modal").remove();
+                                openWishlistList()
+                            }
+                        }
+                    })
+                }else if(dataId === "Duplicate Wishlist") {
+                    const name = wishlistDetail?.name
+                    const confirm = createDuplicate(name ? name : "");
+                    $('body').append(confirm);
+                    
+                    confirm.find('#btn-close').on('click', function () {
+                        confirm.remove();
+                    })
+
+                    confirm.find("button").on('click', async function (event) {
+                        const buttonId = event.target.id;
+                        confirm.remove();
+                        console.log("buttonId =>",buttonId)
+
+                        if (buttonId === 'btn-save') {
+                            const first_name = `{{ customer.first_name }}`;
+                            const last_name = `{{ customer.last_name }}`;
+                            const email =  `{{ customer.email }}`;
+                            const userId = `{{ customer.id }}`;
+            
+                            const obj = {
+                                store: storeDomain,
+                                name: confirm.find("#txtWishlist").val(),
+                                createdBy: {
+                                    first_name,
+                                    last_name,
+                                    email,
+                                    userId
+                                }
+                            }
+    
+                            const requestOptions = {
+                                method: 'POST',
+                                body: JSON.stringify(obj),
+                                redirect: 'follow'
+                            };
+    
+                            const response = await fetch(`${appUrl}/wishlist/${wishlistId}/duplicate`, requestOptions);
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+                
+                            const result = await response.json();
+                            await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
+                            const gw = await getWishlist(customerId, storeDomain);
+                            if(gw) {
+                                $("#my-wishlist-modal").remove();
+                                openWishlistList();    
+                            }
+                        }
+                    })
+                }else{
+                    $("#my-wishlist-modal").remove();
+                    window.location.href = '/collections/all';
+                }
+            })
+
+            const cShare = myWishlistDetail.find('.sub-heading .btn-share');
+            cShare.on('click', (event) => {
+
+                $("#my-wishlist-modal").remove();
+                const name = `${first_name} ${last_name}`;
+                
+                const confirm = createShare(name ? name : "");
+                $('body').append(confirm);
+                
+                confirm.find('#btn-close').on('click', function () {
+                    confirm.remove();
+                });
+
+                confirm.find('#btn-share').on('click', async function () {
+                    const sender = confirm.find('#txtSenderr').val();
+                    const receipent = confirm.find('#txtReceipent').val();
+                    const message = confirm.find('#txtMessage').val();
+                    const store = getLocalStorage('storeSetting')
+                    const storeId = store._id ? store._id : ""
+    
+                    const obj = {
+                        sender,
+                        receipent,
+                        message,
+                        wishlistId,
+                        storeId,
+                        createdBy: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        },        
+                    }
+                    console.log("obj =>",obj)
+
+                    let isTrue = 0;
+                    const emailRegex = /^(\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)(,\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)*$/;
+
+                    if (obj.sender === "") {
+                        confirm.find('#txtSenderr')[0].classList.add("warning");
+                        isTrue++
+                    } else {
+                        confirm.find('#txtSenderr')[0].classList.remove("warning");
+                    }
+                    
+                    if (obj.receipent === "" || !emailRegex.test(obj.receipent)) {
+                        confirm.find('#txtReceipent')[0].classList.add("warning");
+                        isTrue++
+                    } else {
+                        confirm.find('#txtReceipent')[0].classList.remove("warning");
+                    }
+
+                    if (obj.message === "") {
+                        confirm.find('#txtMessage')[0].classList.add("warning");
+                        isTrue++
+                    } else {
+                        confirm.find('#txtMessage')[0].classList.remove("warning");
+                    }
+                    
+                    if (isTrue > 0) return;
+
+                    confirm.find("#btn-share").css({display: "none"})
+                    confirm.find(".loader").css({display: "block"})
+    
+                    const requestOptions = {
+                        method: 'POST',
+                        body: JSON.stringify(obj),
+                        redirect: 'follow'
+                    };
+
+                    const response = await fetch(`${appUrl}/wishlist/${wishlistId}/share`, requestOptions);
+                    if (!response.ok) {
+                        //throw new Error('Network response was not ok');
+                    }
+        
+                    //const result = await response.json();
+                    await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
+                    confirm.remove();
+
+                    const notif = createNotification(`<div class="flex">
+                        <img src="${wishlistDetail.products[0].productImage}" width="64">
+                        <div class="block px-3 w-full">
+                            <p>
+                                <span class="font-bold">${wishlistDetail.name } </span>has been shared to
+                                <span class="font-bold">${receipent}</span>successfully.
+                            </p>
+                        </div>
+                    </div>`)
+                    $('body').append(notif);
+                    notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+
+                    setTimeout(() => {
+                        notif.remove();
+                    },3000)
+    
+                });
+
+            })
+            const cAddToCart = myWishlistDetail.find('.sub-heading .btn-add-to-cart');
+            cAddToCart.on('click', (event) => {
+                console.log('cAddToCart')
+            })
+
 
         };
         
@@ -1641,9 +1987,10 @@
         // //-- start login popup
         let storeSetting = localStorage.getItem("storeSetting")
         storeSetting = JSON.parse(storeSetting) ?? null
+        console.log("storeSetting =>",storeSetting)
     
-        const textColor = storeSetting !== null ? storeSetting.loginPromptSettings.color : ""
-        const text = storeSetting !== null ? storeSetting.loginPromptSettings.promptText && storeSetting.loginPromptSettings.promptText !== "" ? storeSetting.loginPromptSettings.promptText : "" : ""
+        const textColor = storeSetting !== null ? storeSetting?.loginPromptSettings?.color : ""
+        const text = storeSetting !== null ? storeSetting?.loginPromptSettings?.promptText && storeSetting?.loginPromptSettings?.promptText !== "" ? storeSetting?.loginPromptSettings?.promptText : "" : ""
     
         const loginFormString = `{%- form 'customer_login', novalidate: 'novalidate' -%}
         {%- if form.errors -%}
