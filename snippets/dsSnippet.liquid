@@ -6,7 +6,7 @@
     
     jQuery(document).ready(function($) {
         const getElementValue = (id) => document.getElementById(id).value;
-    
+
         const currentUrl = window.location.href;
         const customerId = `{{ customer.id }}`;
         const storeDomain = `https://{{ shop.domain }}`;
@@ -113,13 +113,6 @@
         const myWishlistMmodal = $('#my-wishlist-modal');
         const mainContent = $('#MainContent');
     
-        const sizeSelect = document.getElementById('size');
-    
-        const notificationModal = $('#notification-modal');
-        const notificationModalDialog = document.getElementById("notification-modal-dialog")
-    
-        const btnCloseNotification = document.getElementById('btn-close-notification-modal');
-    
         const productColumnSticky = document.querySelector('.product')
     
         const btnWishlistSave = document.getElementById('btn-wishlist-save');
@@ -132,15 +125,7 @@
         const addWishlistModal = document.getElementById('add-wishlist-modal');
         const btnCloseModal = $('#btn-close-modal')[0];
         const closeAddWishlist = $('#close-add-wishlist')[0];
-        const btnCreateWishlist = document.getElementById('btn-create-wishlist');
    
-        sizeSelect.addEventListener('change', function () {
-            const selectedValue = sizeSelect.value;
-            const selectedIndex = sizeSelect.selectedIndex;
-            document.getElementById('productSize').value = selectedValue
-            document.getElementById('productVariant').value = selectedIndex
-        });
-    
         const cCapsule = document.querySelector('#capsule-container')        
         const dropCapsule = cCapsule.querySelector('.dropbtn');
         var dcCapsule = cCapsule.querySelector('.dropdown-content');
@@ -148,6 +133,13 @@
         dropCapsule.addEventListener('click', function (event) {
           dcCapsule.style.display = (dcCapsule.style.display === 'block') ? 'none' : 'block';
         });
+
+        const notifModal = document.querySelector("#notification");
+        if(notifModal) {
+            notifModal.querySelector('#btn-close').addEventListener('click', function (event) {
+                notifModal.remove();
+            });
+        }
       
         dcCapsule.addEventListener('click', function (event) {
             if (event.target.tagName === 'A') {
@@ -190,12 +182,10 @@
             }
         });
 
-    
-        btnCloseNotification.addEventListener('click', closeNotification);
         closeAddWishlist.addEventListener('click', closeAddNewWishlist);
         btnCloseCapsule.addEventListener('click', closeAddNewCapsule);
         btnCloseModal.addEventListener('click', closeModal);
-    
+
         btnWishlistSave.addEventListener('click', function () {
             var txtWishlist = document.getElementById("txtWishlist");
             if (txtWishlist.value.trim()) {
@@ -254,249 +244,11 @@
             window.location.href = customerId === "" ? redirectToLogin : "/account/";
         });
     
-        var variantRadios = document.querySelectorAll('input[name="Size"]');
-        // Add a change event listener to the radio buttons
-        var allSizes = [];
-        variantRadios.forEach(function (radio) {
-            allSizes.push(radio.value);
-        });
-
-        variantRadios.forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                // Check if the radio button is checked
-                if (radio.checked) {
-                    // Get the selected variant size value
-                    var selectedVariantSize = radio.value;
-                    document.getElementById('productSize').value = selectedVariantSize
-                    sizeSelect.innerHTML = "";
-                    allSizes.forEach(function (variant) {
-                        var option = document.createElement("option");
-                        option.value = variant;
-                        option.text = variant;
-        
-                        // Set the selected attribute based on the value
-                        if (variant === selectedVariantSize) {
-                            option.selected = true;
-                        }
-        
-                        sizeSelect.appendChild(option);
-                    });
-        
-
-                }
-            });
-        });
-        
-
-
         // Function to append menu item
         function appendMenuItem(parent, text) {
             const menuItem = $('<div>').text(text).attr('id', text.toLowerCase().replace(/\s+/g, '-') + '-menu').addClass('right-menu');
             parent.append(menuItem);
         }
-    
-        btnCreateWishlist.addEventListener('click', async function () {
-            const wishlistId = getElementValue("wishlistId");
-            const productId = getElementValue("productId");
-            const productName = getElementValue("productName");
-            const productPrice = getElementValue("productPrice");
-            const productImage = "https:" + getElementValue("productImage");
-            const productUrl = getElementValue("productUrl");
-            let productSize = getElementValue("productSize");
-            if(productSize === "Default Title") productSize = "--"
-            const productVariant = Number(getElementValue("productVariant"));
-    
-            const userId = `{{ customer.id }}`;   
-            const comments = getElementValue("txtComment");
-            const email = getElementValue("customerEmail");
-            const first_name = getElementValue("customerFirstname");
-            const last_name = getElementValue("customerLastname");
-            const store = storeDomain
-    
-            const name = dropWishlist.querySelector('span').textContent === "No wishlist selected" ? "" : dropWishlist.querySelector('span').textContent;
-            const capsuleName = dropCapsule.querySelector('span').textContent === "No capsule selected" ? "" : dropCapsule.querySelector('span').textContent;   
-    
-            const obj = {
-                store,
-                name,
-                products: [{
-                    productId,
-                    productName,
-                    productPrice,
-                    productImage,
-                    productUrl,
-                    productVariant,
-                    productSize,
-                    capsule: {
-                        name: capsuleName
-                    }
-                }],
-                comments: comments ? [{
-                    comment: comments,
-                    commentedBy: {
-                        first_name,
-                        last_name,
-                        email,
-                        userId
-                    }
-                }] : undefined,
-                createdBy: {
-                    first_name,
-                    last_name,
-                    email,
-                    userId
-                },
-                lastAdded: {
-                    by: {
-                        first_name,
-                        last_name,
-                        email,
-                        userId
-                    }
-                },
-                lastUpdated: {
-                    by: {
-                        first_name,
-                        last_name,
-                        email,
-                        userId
-                    }
-                }
-            };
-    
-            const myHeaders = new Headers();
-            myHeaders.append("Content-Type", "application/json");
-    
-            const requestOptions = {
-                method: 'POST',
-                // headers: myHeaders,
-                body: JSON.stringify(obj),
-                redirect: 'follow'
-            };
-    
-            try {
-                let isTrue = 0;
-                if (obj.name === "") {
-                    cWishlist.classList.add("warning");
-                    isTrue++
-                } else {
-                    cWishlist.classList.remove("warning");
-                }
-
-                if (isTrue > 0) return;
-    
-                btnCreateWishlist.style.display = "none";
-                document.getElementById("loader").style.display = "block"
-    
-                /*
-                var settings = {
-                  "url": `${appUrl}/wishlist`,
-                  "method": "POST",
-                  "timeout": 0,
-                   "headers": {
-                      "Content-Type": "application/json"
-                    },
-                  "data": obj,
-                }
-                $.ajax(settings).done(async function (response) {
-                  console.log('CREATE WISHLIST',response);
-                  document.getElementById("sizeAdd").innerHTML = " - Size: "+productSize;
-                  document.getElementById("wishlistAdd").innerHTML = name;
-    
-                  await Promise.all([
-                    new Promise(resolve => {
-                      setTimeout(() => {
-                        btnCreateWishlist.style.display = "block";
-                        document.getElementById("loader").style.display = "none";
-                      }, 2000);
-                    }),
-                    new Promise(resolve => {
-                      setTimeout(() => {
-                        closeModal();
-                        document.getElementById('txtComment').value = "";
-                        notificationModalDialog.classList.add('animate__animated', 'animate__slideInDown');
-                        showNotification();
-                      }, 1000);
-                    }),
-                    new Promise(resolve => {
-                      setTimeout(() => {
-                        closeNotification();
-                        resolve();
-                      }, 5000);
-                    })
-                  ]);
-                });
-                */
-    
-                let response;
-                if(wishlistId){
-                    let productObj = obj;
-                    delete productObj.comments;
-                    productObj.products[0].comments = comments ? [{
-                        comment: comments,
-                        commentedBy: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        }
-                    }] : undefined;
-    
-                    const productData = {
-                        method: 'POST',
-                        // headers: myHeaders,
-                        body: JSON.stringify(productObj),
-                        redirect: 'follow'
-                    };
-                    response = await fetch(appUrl + "/wishlist/"+wishlistId+"/product", productData);
-                }else{
-                    response = await fetch(appUrl + "/wishlist", requestOptions);
-                }
-    
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-    
-                const result = await response.json();
-    
-                document.getElementById("sizeAdd").innerHTML = " - Size: " + productSize;
-                document.getElementById("wishlistAdd").innerHTML = name;
-                
-                //start reload cookie
-                getWishlist(customerId, storeDomain);
-                getProductCapsules(customerId, storeDomain);
-                //end reload cookie
-    
-                await Promise.all([
-                    new Promise(resolve => {
-                        setTimeout(() => {
-                            btnCreateWishlist.style.display = "block";
-                            document.getElementById("loader").style.display = "none";
-                            dropCapsule.querySelector('span').textContent = "No capsule selected";
-                            dropWishlist.querySelector('span').textContent = "No wishlist selected";
-                            document.getElementById('wishlistId').value = "";
-                        }, 2000);
-                    }),
-                    new Promise(resolve => {
-                        setTimeout(() => {
-                            closeModal();
-                            document.getElementById('txtComment').value = "";
-                            notificationModalDialog.classList.add('animate__animated', 'animate__slideInDown');
-                            showNotification();
-                        }, 1000);
-                    }),
-                    new Promise(resolve => {
-                        setTimeout(() => {
-                            closeNotification();
-                            resolve();
-                        }, 5000);
-                    })
-                ]);
-    
-            } catch (error) {
-                console.error('Error creating wishlist:', error);
-            }
-        });
         
         async function injectDropdown(parent,text) {
             const container = document.getElementById(`${parent}-container`)
@@ -540,7 +292,7 @@
                         <p class="m-0">Size</p>
                         <select name="size" id="size" class="bg-none">
                             {%- for p in product.variants -%}
-                            <option value="{{ p.title }}">{{ p.title }}</option>
+                            <option value="{{ p.title }}" data-variant-id="{{ p.id }}">{{ p.title }}</option>
                             {%- endfor -%}
                         </select>
                         <div id="close-wishlist-form" class="top-0 right-0 absolute cursor-pointer">
@@ -639,7 +391,6 @@
                 };
                 $.ajax(requestOptions).done(function (response) {
                     const res = response.data[0];
-                    console.log("res =>",res)
                     if(res) {
                         setCookie('storeSetting', JSON.stringify(res), 1);
                         setLocalStorage("storeSetting", res)
@@ -709,8 +460,6 @@
                                 redirectToLogin();
                             }
                         });
-    
-    
                     }
     
                 });
@@ -744,6 +493,8 @@
                                         productName: product.productName,
                                         productPrice: product.productPrice,
                                         productSize: product.productSize,
+                                        productPriceCurrency :  product.productPriceCurrency ? product.productPriceCurrency : "",
+                                        productVariant: product.productVariant,
                                         productImage: removeQueryString(product.productImage),
                                         capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
                                     })),
@@ -803,13 +554,71 @@
                 console.error('Error:', error);
             }
         }
-    
+        if (currentUrl.includes('/account')) {
+            if(userId && storeDomain) getWishlist(userId, storeDomain);
+        }
+
         if (currentUrl.includes('/products/')) {
+
             const productTitle = document.querySelector('.product__title');
+
+            const sizeSelect = document.getElementById('size');
+            sizeSelect.addEventListener('change', function () {
+                const selectedSize = $(this).val();
+                const selectedVariantId = $(this).find(':selected').data('variant-id');
+                console.log("info =>",{
+                    selectedSize: selectedSize,
+                    selectedVariantId: selectedVariantId
+                })
+                document.getElementById('productSize').value = selectedSize
+                document.getElementById('productVariant').value = selectedVariantId
+            });
+    
+            const variants = [];
+            {% for variant in product.variants %}
+              variants.push({id: `{{ variant.id }}`, title: `{{ variant.title }}`});
+            {% endfor %}
+
+            // Add a change event listener to the radio buttons
+            const variantRadios = document.querySelectorAll('input[name="Size"]');
+            variantRadios.forEach(function (radio) {
+                radio.addEventListener('change', function () {
+                    // Check if the radio button is checked
+                    if (radio.checked) {
+                        // Get the selected variant size value
+                        var selectedVariantSize = radio.value;
+                        var selectedVariant = variants.find(function (variant) {
+                            return variant.title === selectedVariantSize;
+                        });
+                        console.log("selectedVariant =>",selectedVariant)
+
+                        if (selectedVariant) {
+                            var selectedVariantId = selectedVariant.id;
+                            console.log("selectedVariantId :",selectedVariantId)
+                            document.getElementById('productSize').value = selectedVariantSize
+                            document.getElementById('productVariant').value = selectedVariantId
+                            sizeSelect.innerHTML = "";
+                            variants.forEach(function (variant) {
+                                var option = document.createElement("option");
+                                option.value = variant.title;
+                                option.text = variant.title;
+                                option.setAttribute("data-variant-id", variant.id);
+                
+                                // Set the selected attribute based on the value
+                                if (variant.title === selectedVariantSize) {
+                                    option.selected = true;
+                                }
+                
+                                sizeSelect.appendChild(option);
+                            });
+                        }
+                    }
+                });
+            });            
     
             // Create a new div element with the wishlist-form HTML
             const wishlistForm = document.createElement('div');
-            wishlistForm.innerHTML = '<div class="wishlist-form"><div id="wishlist-button" class="wishlist-button cursor-pointer"></div></div>';
+            wishlistForm.innerHTML = `<div class="wishlist-form"><div id="wishlist-button" class="wishlist-button cursor-pointer"></div></div>`;
     
             // Append the wishlistForm div to the productTitle div
             if (productTitle) productTitle.appendChild(wishlistForm);
@@ -823,8 +632,191 @@
                 getProductCapsules(customerId, storeDomain);
             }
     
-            // Call your getStore function
-            // getStore(shopName, shopEmail);
+            const btnCreateWishlist = document.getElementById('btn-create-wishlist');
+            btnCreateWishlist.addEventListener('click', async function () {
+                const wishlistId = getElementValue("wishlistId");
+                const productId = getElementValue("productId");
+                const productName = getElementValue("productName");
+                const productPrice = getElementValue("productPrice");
+                let productPriceCurrency = "";
+                const priceItemElement = document.querySelector('.price-item');
+                if (priceItemElement && priceItemElement.outerText)  productPriceCurrency = priceItemElement.outerText.trim();
+                const productImage = "https:" + getElementValue("productImage");
+                const productUrl = getElementValue("productUrl");
+                let productSize = getElementValue("productSize");
+                if(productSize === "Default Title") productSize = "--"
+                const productVariant = Number(getElementValue("productVariant"));
+        
+                const comments = getElementValue("txtComment");
+        
+                const name = dropWishlist.querySelector('span').textContent === "No wishlist selected" ? "" : dropWishlist.querySelector('span').textContent;
+                const capsuleName = dropCapsule.querySelector('span').textContent === "No capsule selected" ? "" : dropCapsule.querySelector('span').textContent;   
+        
+                const obj = {
+                    store : storeDomain,
+                    name,
+                    products: [{
+                        productId,
+                        productName,
+                        productPrice,
+                        productPriceCurrency,
+                        productImage,
+                        productUrl,
+                        productVariant,
+                        productSize,
+                        capsule: {
+                            name: capsuleName
+                        }
+                    }],
+                    comments: comments ? [{
+                        comment: comments,
+                        commentedBy: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    }] : undefined,
+                    createdBy: {
+                        first_name,
+                        last_name,
+                        email,
+                        userId
+                    },
+                    lastAdded: {
+                        by: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    },
+                    lastUpdated: {
+                        by: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    }
+                };
+        
+                const myHeaders = new Headers();
+                myHeaders.append("Content-Type", "application/json");
+        
+                const requestOptions = {
+                    method: 'POST',
+                    // headers: myHeaders,
+                    body: JSON.stringify(obj),
+                    redirect: 'follow'
+                };
+        
+                try {
+                    let isTrue = 0;
+                    if (obj.name === "") {
+                        cWishlist.classList.add("warning");
+                        isTrue++
+                    } else {
+                        cWishlist.classList.remove("warning");
+                    }
+
+                    if (isTrue > 0) return;
+        
+                    btnCreateWishlist.style.display = "none";
+                    document.getElementById("loader").style.display = "block"
+        
+                    let response;
+                    if(wishlistId){
+                        let productObj = obj;
+                        delete productObj.comments;
+                        productObj.products[0].comments = comments ? [{
+                            comment: comments,
+                            commentedBy: {
+                                first_name,
+                                last_name,
+                                email,
+                                userId
+                            }
+                        }] : undefined;
+        
+                        const productData = {
+                            method: 'POST',
+                            // headers: myHeaders,
+                            body: JSON.stringify(productObj),
+                            redirect: 'follow'
+                        };
+                        response = await fetch(appUrl + "/wishlist/"+wishlistId+"/product", productData);
+                    }else{
+                        response = await fetch(appUrl + "/wishlist", requestOptions);
+                    }
+        
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+
+                    const result = await response.json();
+        
+                    //start reload cookie
+                    getWishlist(customerId, storeDomain);
+                    getProductCapsules(customerId, storeDomain);
+                    //end reload cookie
+        
+                    const notif = createNotification(`
+                        <div class="flex">
+                            {% if product.images.size > 0 %}
+                            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+                            {% endif %}
+                            <div class="block px-3 relative w-full">
+                                <p>
+                                    <span class="font-bold">
+                                        {{ product.title | escape }}
+                                    </span>
+                                    <span id="sizeAdd" class="font-bold"> - Size : ${productSize}</span>
+                                    has been added to
+                                    <span id="wishlistAdd" class="font-bold">
+                                        ${name}
+                                    </span>
+                                    successfully
+                                </p>
+                            </div>
+                        </div>`
+                    )
+
+                    await Promise.all([
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                btnCreateWishlist.style.display = "block";
+                                document.getElementById("loader").style.display = "none";
+                                dropCapsule.querySelector('span').textContent = "No capsule selected";
+                                dropWishlist.querySelector('span').textContent = "No wishlist selected";
+                                document.getElementById('wishlistId').value = "";
+                                deleteCookie("wishlistId");
+                            }, 2000);
+                        }),
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                closeModal();
+                                document.getElementById('txtComment').value = "";
+                                $('body').append(notif);
+                                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+                                notif.find('#btn-close').on('click', function () {
+                                    notif.remove();
+                                    resolve();
+                                })
+                            }, 1000);
+                        }),
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                notif.remove();
+                                resolve();
+                            }, 3000);
+                        })
+                    ]); 
+        
+                } catch (error) {
+                    console.error('Error creating wishlist:', error);
+                }
+            });
         }
     
         function redirectToLogin() {
@@ -837,11 +829,13 @@
             productColumnSticky.style.position = "relative";
             productColumnSticky.style.zIndex = -1;
     
-            //addBodyStyling()
-            {% comment %} mainContent.css({
-                position: 'relative',
-                zIndex: -1
-            }); {% endcomment %}
+            if(getCookie("wishlistId")) {
+                const id = getCookie("wishlistId");
+                const wishlistDetail = wishlistData.find((e) => e._id == id);
+                console.log("wishlistDetail =>",wishlistDetail)
+                document.getElementById('wishlistId').value = id ? id : "";
+                dropWishlist.querySelector('span').textContent = wishlistDetail?.name;
+            }
         }
         function addBodyStyling() {
             const mainContent = $('#MainContent');
@@ -879,31 +873,6 @@
             capsuleModal.css({'display': 'none'});
             productColumnSticky.style.position = "relative"
             productColumnSticky.style.zIndex = -1;
-        }
-    
-        function closeNotification() {
-            notificationModal.css({'display': 'none'});
-            productColumnSticky.style.position = "sticky"
-            productColumnSticky.style.zIndex = 2;
-    
-            //delBodyStyling();
-            {% comment %} mainContent.css({
-                position: 'sticky',
-                zIndex: 2
-            }); {% endcomment %}
-        }
-    
-        function showNotification() {
-            notificationModal.css({'display': 'block'});
-            productColumnSticky.style.position = "relative"
-            productColumnSticky.style.zIndex = -1;
-    
-            //addBodyStyling();
-            {% comment %} mainContent.css({
-                position: 'relative',
-                zIndex: -1
-            }); {% endcomment %}
-    
         }
     
         // Function to remove query string from URL
@@ -989,25 +958,33 @@
         
             setupDropdownClickEvent(dCapsule, dcCapsule, filterProductsByCapsule);
         
-            myWishlistContent.on('click', '.wishlist-item', function (event) {
-                const wishlistId = $(event.currentTarget).attr('data-id');
-                const closeProduct = myWishlistDetail.find('.wishlist-item .btn-close');
-                closeProduct.html(icons.close);
-                myWishlistContent.addClass('hidden');
-                myWishlistDetail.removeClass('hidden');
-                setupDropdownContent(dcWishlist, wishlistData, true);
-                showWishlistDetail(wishlistId);
-            });
-        
+            myWishlistContent.on('click', '.wishlist-item .item, .wishlist-item .name', function (event) {
+                const wishlistId = $(this).closest('.wishlist-item').attr('data-id');
+                if(wishlistId) {
+                    const closeProduct = myWishlistDetail.find('.wishlist-item .btn-close');
+                    closeProduct.html(icons.close);
+                    myWishlistContent.addClass('hidden');
+                    myWishlistDetail.removeClass('hidden');
+                    setupDropdownContent(dcWishlist, wishlistData, true);
+                    showWishlistDetail(wishlistId);
+                }
+            });        
             wishlistList.show();
+
+            const cShare = myWishlistContent.find('.wishlist-content .wishlist-item .btn-share');
+            cShare.on('click', async (event) => {
+                const wishlistId = $(event.currentTarget).closest('.wishlist-item').attr('data-id');
+                await shareWishlist(wishlistId);
+            })
+
         }
 
-        const createConfirm = () => {
+        const createConfirm = (text="") => {
             const modal = $(`
-                <div id="remove-product-modal" class="modal" style="display: block">
+                <div id="confirm-modal" class="modal" style="display: block">
                     <div class="modal-content" style="width: 385px;">
-                      <div class="modal-body pt-0 text-center">
-                        <p>Are you sure want to remove the item? You cannot undo this step..</p>
+                      <div class="modal-body p-0 text-center">
+                        <p>${text === "" ? "Are you sure want to remove the item? You cannot undo this step." : text }</p>
                         <div class="confirm flex gap-4 w-1/2 mx-auto">
                             <button id="confirm-no" class="p-2">No</button>
                             <button id="confirm-yes" class="p-2">Yes</button>
@@ -1020,7 +997,7 @@
         }
         const createWishlistList = () => {
             const wishlistList = $(`<div id="my-wishlist-modal" class="modal">
-                <div id="modal-dialog" class="my-wishlist-modal pt-0">
+                <div id="modal-dialog" class="my-wishlist-modal p-0">
                     <div class="flex justify-between px-5 bar w-full">
                         <div class="flex align-center">
                             <h2 class="font-bold">My Wishlist</h2>
@@ -1080,7 +1057,7 @@
                                         ${icons.shoppingBag}
                                     </div>
                                     ADD ALL TO CART</div>
-                                <div id="manage-wishlist" class="select-botton-container min-w-0 relative">
+                                <div class="select-botton-container min-w-0 relative manage-wishlist">
                                     <div class="btn border-0">Manage Wishlist</div>
                                     <div id="manage-wishlist-content" class="dropdown-content manage-wishlist-content w-full">
                                         <a data-id="Add Item">
@@ -1130,7 +1107,8 @@
                                 </div>
                                 <div class="flex w-full">
                                     <div class="input-group w-full">
-                                        <input id="wishlistComment" type="text" placeholder="Enter your comment here...">
+                                        {% comment %} <input id="wishlistComment" type="text" placeholder="Enter your comment here..."> {% endcomment %}
+                                        <textarea id="wishlistComment" placeholder="Enter your comment here..." required class="w-full" ></textarea>
                                         <div id="loader" class="loader"></div>
                                         <button disabled id="submitComment" type="button">POST</button>
                                     </div>                            
@@ -1296,20 +1274,21 @@
                 <div class="wishlist-item bg-white m-4 p-4 shadow-md flex flex-col w-full h-full justify-center" data-id=${item._id}>
                     <div class="flex justify-between px-5 py-3 w-full mb-auto">
                         <div class="flex align-center">
-                            <h6 class="name m-0">${item.name}</h6>
+                            <h6 class="name m-0 cursor-pointer">${item.name}</h6>
                         </div>
 
                         <div class="btn-share cursor-pointer flex justify-end align-center">
                             ${icons.share}
                         </div>
                     </div>
-
-                    <div class="flex gap-4 my-auto item-${item.products.length <= 2 ? item.products.length : 3}">
-                        ${productImage.join('')}
-                    </div>
-                    <div class="mt-5">
-                        <p class="p-0 m-0 view">${item.products.length} product</p>
-                        <p class="p-0 m-0 view">VIEW LIST</p>
+                    <div class="item cursor-pointer">
+                        <div class="flex gap-4 my-auto item-${item.products.length <= 2 ? item.products.length : 3}">
+                            ${productImage.join('')}
+                        </div>
+                        <div class="mt-5">
+                            <p class="p-0 m-0 view">${item.products.length} product</p>
+                            <p class="p-0 m-0 view">VIEW LIST</p>
+                        </div>
                     </div>
                 </div>
             `;
@@ -1372,6 +1351,7 @@
         };
         
         const setupDropdownContent = (dropdownContent, data, isWishlist = false) => {
+            console.log("setupDropdownContent =>",data)
             dropdownContent.html(isWishlist ? `
                 <div class="search">
                     <label>Search Wishlist</label>
@@ -1388,7 +1368,7 @@
             data.forEach((item) => {
                 dropdownContent.append(isWishlist ? `                                       
                     <a data-id="${item._id}">
-                        <img src="${item.products[0].productImage}">
+                        <img src="${item.products.length > 0 ? item.products[0].productImage : ""}">
                         ${item.name} (${item.products.length})
                     </a>
                 ` : `
@@ -1472,16 +1452,14 @@
                     myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
                     myWishlistDetail.on('input', '#wishlistComment', function () {
                         const comment = $(this).val().toLowerCase();
-                        if(comment.length > 3) myWishlistDetail.find('#submitComment').prop('disabled', false);
+                        myWishlistDetail.find('#submitComment').prop('disabled', comment.length > 3 ? false : true);
                     });
                 }
             }
             console.log("wishlistDetail.products =>",wishlistDetail.products)
 
             const groupedData = groupByProperty(wishlistDetail.products, 'capsule');
-            console.log("groupedData =>",groupedData)
             const capsuleData = Object.keys(groupedData);
-            console.log("capsuleData =>",capsuleData)
             if(capsuleData) {
                 setCookie('capsuleData', JSON.stringify(capsuleData), 1);
                 setupDropdownContent(dcCapsule, capsuleData);
@@ -1509,10 +1487,10 @@
                     groupedData[category].forEach((product) => {
                         const item = $(`
                             <div class="flex item mb-4">
-                                <div class="wishlist-item bg-white shadow-md flex flex-col w-full h-full justify-center mb-0">
+                                <div class="wishlist-item bg-white shadow-md flex flex-col w-full h-full justify-center mb-0" data-id="${product._id}" data-product-id="${product.productId}">
                                     <div class="p-3">
                                         <div class="flex justify-between pb-3 w-full mb-auto">
-                                            <div class="btn-close remove-product cursor-pointer ml-auto" data-product-id="${product._id}">
+                                            <div class="btn-close remove-product cursor-pointer ml-auto">
                                                 ${icons.close}
                                             </div>
                                         </div>
@@ -1523,7 +1501,7 @@
                                         </div>
                                         <div class="mt-8">
                                             <p class="p-0 m-0 view">${product.productName}</p>
-                                            <p class="p-0 m-0 view">${product.productPrice}</p>
+                                            <p class="p-0 m-0 view">${product.productPriceCurrency !== "" ? product.productPriceCurrency : product.productPrice}</p>
                                         </div>
                                     </div>
                                     <div class="select-size">
@@ -1540,15 +1518,18 @@
                 }
             }
             $('.wishlist-item .remove-product').on('click', async function (event) {
-                const idProducts = $(this).data('product-id');
+                const idProducts = $(this).closest('.wishlist-item').data('id');
                 const confirm = createConfirm();
-
                 $('body').append(confirm);
+
                 confirm.find("button").on('click', async function (event) {
                     const buttonId = event.target.id;
                     confirm.remove();
                     if (buttonId === 'confirm-yes') {
-                        
+                        $("#my-wishlist-detail-content").empty();
+                        const rl = await renderLoader();
+                        $("#my-wishlist-detail-content").append(rl)
+
                         const obj = {
                             store: storeDomain,
                             idProducts : [idProducts],
@@ -1570,6 +1551,180 @@
                     }
                 })
             })
+
+            $('.wishlist-item .select-size').on('click', async function (event) {                
+                const idProducts = $(this).closest('.wishlist-item').data('product-id');
+                const _id = $(this).closest('.wishlist-item').data('id');
+                $("#my-wishlist-detail-content").empty();
+                const rl = await renderLoader();
+                $("#my-wishlist-detail-content").append(rl);
+
+                async function getProductById(id) {
+                    const handle = (await fetch(`/search/suggest.json?q=id:${id}&resources[type]=product&limit=1`)
+                        .then(response => response.json())
+                        .then(response => response.resources.results.products.shift())).handle;
+                
+                    return await fetch(`/products/${handle}.js`).then(response => response.json());
+                }
+                
+                function capsuleOnClick(selected) {
+                    console.log("capsuleOnClick =>",selected)
+                }
+                const product = await getProductById(idProducts);                
+                if(product) {
+                    console.log("product =>",product)
+                    const productDetail = wishlistDetail?.products.find(e => e._id === _id);
+                    console.log("productDetail =>",productDetail)
+
+                    const rpd = await renderProductDetail({...product, priceCurrency: productDetail.productPriceCurrency})
+                    if(rpd) {
+                        $("#my-wishlist-detail-content").find('.render-loader').remove()
+                        $("#my-wishlist-detail-content").append(rpd)
+                        const groupedData = groupByProperty(wishlistDetail.products, 'capsule');
+                        const capsuleData = Object.keys(groupedData);
+                        if(capsuleData) {
+                            const cCapsule = $('#my-wishlist-detail-content .column-details .select-botton-container')
+                            const dCapsule = cCapsule.find(".dropdown");
+                            const dcCapsule = dCapsule.find(".dropdown-content");
+
+                            if(productDetail?.capsule) dCapsule.find('span').text(productDetail?.capsule);
+
+                            setupDropdownContent(dcCapsule, capsuleData);
+                            dCapsule.on('click', () => {
+                                dcCapsule.css('display', dcCapsule.css('display') === 'block' ? 'none' : 'block');
+                            });
+                            dcCapsule.on('click', async (event) => {
+                                const dataId = event.target.getAttribute('data-id');
+                                dCapsule.find('span').text(dataId);
+
+                                console.log("click =>",{
+                                    _id: _id,
+                                    wishlistId: wishlistId,
+                                    capsule: dataId,
+                                })
+
+                                // add loader
+                                dCapsule.css('display', 'none');
+                                //cCapsule.append
+                                const rl = await renderLoader('0');
+                                cCapsule.append(rl)                                
+                                
+                                const b = {
+                                    wishlistId: wishlistId,
+                                    product: {
+                                        store: storeDomain,
+                                        product: {
+                                            _id: _id,
+                                            productId: idProducts,
+                                            capsule: dataId
+                                        }
+                                    }
+                                }
+
+                                const uc = await updateCapsule(b);
+                                console.log("updateCapsule =>",updateCapsule)
+
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                cCapsule.find('.render-loader').remove()
+                                dCapsule.css('display', 'block');
+
+                                if(uc && uc.success) {
+                                    await getWishlist(userId, storeDomain);
+                                    const notif = createNotification(`<div class="flex">
+                                        <img src="${product.featured_image}" width="64">
+                                        <div class="block px-3 w-full">
+                                            <p>
+                                                <span class="font-bold">${wishlistDetail.name } Capsule</span> has been changed to
+                                                <span class="font-bold">${dataId}</span> successfully.
+                                            </p>
+                                        </div>
+                                    </div>`)
+                                    $('body').append(notif);
+                                    notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+                
+                                    await new Promise(resolve => setTimeout(resolve, 2500));
+                                    notif.remove();
+                                    showWishlistDetail(wishlistId);
+                                }
+                            });                            
+                        }
+
+                        const formActions = $("#my-wishlist-detail-content").find('.product-form .form-actions')
+                        formActions.find('button').on("click", async function(event) {
+                            const selectedSize = $(".single-option-radio input[name='size']:checked");
+                            console.log("selectedSize =",selectedSize)
+                            if (selectedSize.length > 0) {
+                                
+                                const confirm = createConfirm(`Are you sure want to add ${productDetail?.productName} to cart? `);
+                                $('body').append(confirm);
+                                confirm.find("button").off('click')
+                                confirm.find("button").on('click', async function (event) {               
+                                    confirm.remove();
+                                    if (event.target.id === 'confirm-yes') {
+                                        const selectedSizeValue = selectedSize.val();
+                                        const items = [{
+                                            id: selectedSizeValue,
+                                            quantity: 1
+                                        }]
+                                        const obj = {
+                                            productImage: productDetail?.productImage,
+                                            name: productDetail?.productName
+                                        }
+
+                                        formActions.find('button').css('display','none');
+                                        const rl = await renderLoader('0px');
+                                        formActions.append(rl)
+        
+                                        const atc = await addToCart(items, obj, false);
+                                        if(atc && atc.success ) {
+                                            window.location.href = "/cart"
+                                        }
+        
+        
+                                    }
+                                })                
+                                
+                            } else {
+                                console.log("No size selected.");
+                            }
+                        })
+                    }
+                    
+                    $("#my-wishlist-detail-content").find('.collapsible').on('click', function(event) {
+                        const buttonId = event.target.getAttribute('data-button-id');
+                        const contentId = $(event.currentTarget).attr('data-content-id');
+                        const content = $(`#${contentId}`);
+                        if (content.css('display') === 'block') {
+                          content.css('display', 'none');
+                          $(this).find('.btn-collaps').text('+');
+                        } else {
+                          content.css('display', 'block');
+                          $(this).find('.btn-collaps').text('-');
+                        }
+                    })
+                }
+            })
+
+            {% comment %} const commentInput = document.getElementById('wishlistComment');
+            const submitButton = document.getElementById('submitComment');
+
+            commentInput.addEventListener('keydown', function (event) {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault(); // Prevent the default Enter behavior (submitting the form)
+                  submitButton.click(); // Simulate a click on the submit button
+                } else if (event.key === 'Enter' && event.shiftKey) {
+                    console.log("event.shiftKey")
+                  // Insert a new line in the textarea
+                  var cursorPos = commentInput.selectionStart;
+                  var textBefore = commentInput.value.substring(0, cursorPos);
+                  var textAfter = commentInput.value.substring(cursorPos);
+                  commentInput.value = textBefore + '\n' + textAfter;
+          
+                  // Move the cursor to the new line
+                  commentInput.selectionStart = cursorPos + 1;
+                  commentInput.selectionEnd = cursorPos + 1;
+                }
+            }); {% endcomment %}
 
             $('#expand-comment').on('click', async function () {
                 const classExpand = $(this).attr('class');
@@ -1671,20 +1826,28 @@
                 }, 3000);
             });
 
-            const dManage = myWishlistDetail.find('#manage-wishlist');
+            const dManage = myWishlistDetail.find('.sub-heading .manage-wishlist');
+            //const dManage = myWishlistDetail.find('#manage-wishlist');
             const dcManage = dManage.find('.dropdown-content');
+            dManage.off('click');
             dManage.on('click', () => {
                 dcManage.css('display', dcManage.css('display') === 'block' ? 'none' : 'block');
             });
             dcManage.on('click', (event) => {
+                console.log("dcManage wkwkw")
                 const dataId = event.target.getAttribute('data-id');
                 if(dataId === "Remove Wishlist") {
                     const confirm = createConfirm();
                     $('body').append(confirm);
+                    confirm.find("button").off('click');
                     confirm.find("button").on('click', async function (event) {
                         const buttonId = event.target.id;                        
                         confirm.remove();
                         if (buttonId === 'confirm-yes') {
+                            $("#my-wishlist-detail-content").empty();
+                            const rl = await renderLoader();
+                            $("#my-wishlist-detail-content").append(rl)
+                            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
                             const requestOptions = {
                                 method: 'POST',
                                 body: JSON.stringify({store: storeDomain}),
@@ -1707,10 +1870,12 @@
                     const confirm = createDuplicate(name ? name : "");
                     $('body').append(confirm);
                     
+                    confirm.find('#btn-close').off('click');
                     confirm.find('#btn-close').on('click', function () {
                         confirm.remove();
                     })
 
+                    confirm.find('button').off('click');
                     confirm.find("button").on('click', async function (event) {
                         const buttonId = event.target.id;
                         confirm.remove();
@@ -1754,124 +1919,267 @@
                         }
                     })
                 }else{
+                    console.log("Add Item =>",wishlistId)
+                    setCookie("wishlistId", wishlistId,1)
                     $("#my-wishlist-modal").remove();
                     window.location.href = '/collections/all';
                 }
             })
 
             const cShare = myWishlistDetail.find('.sub-heading .btn-share');
-            cShare.on('click', (event) => {
-
-                $("#my-wishlist-modal").remove();
-                const name = `${first_name} ${last_name}`;
-                
-                const confirm = createShare(name ? name : "");
-                $('body').append(confirm);
-                
-                confirm.find('#btn-close').on('click', function () {
-                    confirm.remove();
-                });
-
-                confirm.find('#btn-share').on('click', async function () {
-                    const sender = confirm.find('#txtSenderr').val();
-                    const receipent = confirm.find('#txtReceipent').val();
-                    const message = confirm.find('#txtMessage').val();
-                    const store = getLocalStorage('storeSetting')
-                    const storeId = store._id ? store._id : ""
-    
-                    const obj = {
-                        sender,
-                        receipent,
-                        message,
-                        wishlistId,
-                        storeId,
-                        createdBy: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        },        
-                    }
-                    console.log("obj =>",obj)
-
-                    let isTrue = 0;
-                    const emailRegex = /^(\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)(,\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)*$/;
-
-                    if (obj.sender === "") {
-                        confirm.find('#txtSenderr')[0].classList.add("warning");
-                        isTrue++
-                    } else {
-                        confirm.find('#txtSenderr')[0].classList.remove("warning");
-                    }
-                    
-                    if (obj.receipent === "" || !emailRegex.test(obj.receipent)) {
-                        confirm.find('#txtReceipent')[0].classList.add("warning");
-                        isTrue++
-                    } else {
-                        confirm.find('#txtReceipent')[0].classList.remove("warning");
-                    }
-
-                    if (obj.message === "") {
-                        confirm.find('#txtMessage')[0].classList.add("warning");
-                        isTrue++
-                    } else {
-                        confirm.find('#txtMessage')[0].classList.remove("warning");
-                    }
-                    
-                    if (isTrue > 0) return;
-
-                    confirm.find("#btn-share").css({display: "none"})
-                    confirm.find(".loader").css({display: "block"})
-    
-                    const requestOptions = {
-                        method: 'POST',
-                        body: JSON.stringify(obj),
-                        redirect: 'follow'
-                    };
-
-                    const response = await fetch(`${appUrl}/wishlist/${wishlistId}/share`, requestOptions);
-                    if (!response.ok) {
-                        //throw new Error('Network response was not ok');
-                    }
-        
-                    //const result = await response.json();
-                    await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
-                    confirm.remove();
-
-                    const notif = createNotification(`<div class="flex">
-                        <img src="${wishlistDetail.products[0].productImage}" width="64">
-                        <div class="block px-3 w-full">
-                            <p>
-                                <span class="font-bold">${wishlistDetail.name } </span>has been shared to
-                                <span class="font-bold">${receipent}</span>successfully.
-                            </p>
-                        </div>
-                    </div>`)
-                    $('body').append(notif);
-                    notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
-
-                    setTimeout(() => {
-                        notif.remove();
-                    },3000)
-    
-                });
-
+            cShare.off('click'); // Unbind previous click events
+            cShare.on('click', async (event) => {
+                await shareWishlist(wishlistId);
             })
             const cAddToCart = myWishlistDetail.find('.sub-heading .btn-add-to-cart');
-            cAddToCart.on('click', (event) => {
-                console.log('cAddToCart')
+            cAddToCart.off('click')
+            cAddToCart.on('click', async (event) => {
+
+                const confirm = createConfirm("Are you sure want to add all item to cart? ");
+                $('body').append(confirm);
+                confirm.find("button").on('click', async function (event) {
+                    const buttonId = event.target.id;
+
+                    confirm.remove();
+                    if (buttonId === 'confirm-yes') {
+                        $("#my-wishlist-detail-content").empty();
+                        const rl = await renderLoader();
+                        $("#my-wishlist-detail-content").append(rl)
+
+                        const items = wishlistDetail?.products.map(e => ({
+                            id: e.productVariant,
+                            quantity: 1
+                        }))
+                        
+                        const obj = {
+                            productImage: wishlistDetail.products[0].productImage,
+                            name: wishlistDetail.name
+                        }
+                        const atc = await addToCart(items, obj);
+                        if(atc && atc.success ) {
+                            await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
+                            window.location.href = "/cart"
+                        }
+
+                        {% comment %} const formData = {'items': items};
+                           
+                        await fetch(window.Shopify.routes.root + 'cart/add.js', {
+                             method: 'POST',
+                             headers: {
+                               'Content-Type': 'application/json'
+                             },
+                             body: JSON.stringify(formData)
+                        })
+                        .then(async (response) => {
+                            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+                            $("#my-wishlist-modal").remove();
+                            const notif = createNotification(`<div class="flex">
+                                <img src="${wishlistDetail.products[0].productImage}" width="64">
+                                <div class="flex flex-wrap align-center px-3 w-full">
+                                    <p>All item on 
+                                        <span class="font-bold">${wishlistDetail.name }</span> has been added to cart successfully.
+                                    </p>
+                                </div>
+                            </div>`)
+                            $('body').append(notif);
+                            notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+
+                            await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
+                            window.location.href = "/cart"
+                        })
+                        .catch((error) => {
+                            console.error('Error:', error);
+                        }); {% endcomment %}
+
+                    }
+                })
             })
-
-
         };
         
 
+        const shareWishlist = async(wishlistId) => {
+            const wishlistDetail = wishlistData.find((e) => e._id == wishlistId);
+            const name = `${first_name} ${last_name}`;
+                
+            const confirm = createShare(name ? name : "");
+            $('body').append(confirm);
+            
+            confirm.find('#btn-close').on('click', function () {
+                confirm.remove();
+            });
+
+            confirm.find('#btn-share').on('click', async function () {
+                const sender = confirm.find('#txtSenderr').val();
+                const receipent = confirm.find('#txtReceipent').val();
+                const message = confirm.find('#txtMessage').val();
+                const store = getLocalStorage('storeSetting')
+                const storeId = store._id ? store._id : ""
+
+                const obj = {
+                    sender,
+                    receipent,
+                    message,
+                    wishlistId,
+                    storeId,
+                    createdBy: {
+                        first_name,
+                        last_name,
+                        email,
+                        userId
+                    },        
+                }
+                console.log("obj =>",obj)
+
+                let isTrue = 0;
+                const emailRegex = /^(\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)(,\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)*$/;
+
+                if (obj.sender === "") {
+                    confirm.find('#txtSenderr')[0].classList.add("warning");
+                    isTrue++
+                } else {
+                    confirm.find('#txtSenderr')[0].classList.remove("warning");
+                }
+                
+                if (obj.receipent === "" || !emailRegex.test(obj.receipent)) {
+                    confirm.find('#txtReceipent')[0].classList.add("warning");
+                    isTrue++
+                } else {
+                    confirm.find('#txtReceipent')[0].classList.remove("warning");
+                }
+
+                if (obj.message === "") {
+                    confirm.find('#txtMessage')[0].classList.add("warning");
+                    isTrue++
+                } else {
+                    confirm.find('#txtMessage')[0].classList.remove("warning");
+                }
+                
+                if (isTrue > 0) return;
+
+                confirm.find("#btn-share").css({display: "none"})
+                confirm.find(".loader").css({display: "block"})
+
+                const requestOptions = {
+                    method: 'POST',
+                    body: JSON.stringify(obj),
+                    redirect: 'follow'
+                };
+
+                const response = await fetch(`${appUrl}/wishlist/${wishlistId}/share`, requestOptions);
+                if (!response.ok) {
+                    //throw new Error('Network response was not ok');
+                }
+    
+                //const result = await response.json();
+                await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
+                confirm.remove();
+
+                const notif = createNotification(`<div class="flex">
+                    <img src="${wishlistDetail.products[0].productImage}" width="64">
+                    <div class="block px-3 w-full">
+                        <p>
+                            <span class="font-bold">${wishlistDetail.name } </span> has been shared to
+                            <span class="font-bold">${receipent}</span> successfully.
+                        </p>
+                    </div>
+                </div>`)
+                $('body').append(notif);
+                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+
+                setTimeout(() => {
+                    notif.remove();
+                },3000)
+
+            });
+        }
         function showMyWishlist() {
             openWishlistList();
         }
     
         // // --- end wislist list --
 
+        const renderLoader = async(minHeight = "430px") => {
+            const d = document.createElement('DIV');
+            d.classList.add('flex', 'flex-wrap', 'align-center', 'render-loader');
+            d.style.minHeight = minHeight;
+            d.innerHTML = `<div class="loader" style="display: block"></div>`
+            return d;            
+        }
+        const renderProductDetail = async(data) => {
+            console.log("renderProductDetail: ",data)
+            const div = document.createElement('DIV');
+            div.classList.add('flex', 'w-full', 'product-single')
+            div.style.minHeight = '430px';
+            div.innerHTML = `
+            <div class="column-images flex">
+                <div class="product-thumbnails">
+                    ${data?.images.map(image => `<img src="${image}" />`).join('')}
+                </div>
+                <div class="product-images">
+                    <img src="${data?.featured_image}" />
+                </div>        
+            </div>
+            <div class="column-details">
+                <label>Capsule</label>
+                <br />
+                <div class="select-botton-container">
+                  <div class="dropdown">
+                      <button class="dropbtn drop-capsule bg-none no-border text-left">
+                          <div class="chevron right-0">                              
+                              ${icons.chevron}
+                          </div>
+                          <span>Select</span>
+                      </button>
+                      <div class="dropdown-content w-full" style="display: none;">
+                      </div>
+                  </div>
+                </div>
+                <h1 class="product-title">${data?.title}</h1> 
+                <div> 
+                    <p class="product-vendor m-0">${data?.vendor}</p>
+                </div>
+                <p class="price"><span>${data.priceCurrency !== "" ? data.priceCurrency : data?.price}</span></p>
+                <div class="product-form">
+                    <div class="select-size">
+                        Select Size:
+                    </div>
+                    <div class="product-form-item-inner">
+                        <fieldset class="single-option-radio" name="size" id="ProductSelect-option-1" style="display: block;">
+                            ${data?.variants.map((variant, index) => `<input
+                                type="radio" ${index === 0 ? 'checked="checked"' : ''}  value="${variant?.id}" name="size" class="single-option-selector"
+                                id="ProductSelect-option-size-${index}" data-variant-id="${variant?.id}"> 
+                                <label for="ProductSelect-option-size-${index}" ><span>${variant?.title}</span></label>`).join('')}
+                        </fieldset>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" name="add" class="addtocart btn product-button">
+                            <span>ADD TO CART</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="product-description">
+                    <p>${data?.description}.</p>
+                </div>
+                <div class="collapsible flex justify-between" data-content-id="collapsContent1" data-button-id="btnCollaps1">
+                    <div>PRODUCT DETAILS</div>
+                    <button class="btn-collaps">+</button>
+                </div>
+                <div class="collaps-content" id="collapsContent1">
+                    <p></p>        
+                </div>
+        
+                <div class="collapsible" data-content-id="collapsContent2" data-button-id="btnCollaps2">
+                    <div>SHIPPING & RETURNS</div>
+                    <button class="btn-collaps">+</button>
+                </div>
+                <div class="collaps-content" id="collapsContent2">
+                    <p></p>
+                </div>
+
+            </div>
+            `;
+            return div;
+        }
         const renderComment = (data) => {
             const fullName = `${data.commentedBy.first_name} ${data.commentedBy.last_name}`
             const div = document.createElement('DIV');
@@ -1927,6 +2235,69 @@
                 return 'Just now';
             }
         }
+
+        async function updateCapsule(data) {
+            try {
+                const productData = {
+                    method: 'POST',
+                    // headers: myHeaders,
+                    body: JSON.stringify(data.product),
+                    redirect: 'follow'
+                };
+                const response = await fetch(localUrl + "/wishlist/"+data?.wishlistId+"/product/update", productData);
+                if (!response.ok) {
+                    return ({success: false });
+                }else{
+                    const result = await response.json();
+                    console.log("result =>",result)
+                    return ({success: true, data: result });
+                }
+                
+
+            } catch (error) {
+                return ({success: false });
+            }
+        }
+
+        async function addToCart(items, wishlistDetail, isWishlist=true) {
+            const formData = { 'items': items };
+          
+            try {
+              const response = await fetch(window.Shopify.routes.root + 'cart/add.js', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+              });
+          
+              // Check if the request was successful (status code 2xx)
+              if (response.ok) {
+                await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+                $("#my-wishlist-modal").remove();
+                const notif = createNotification(`<div class="flex">
+                    <img src="${wishlistDetail.productImage}" width="64">
+                    <div class="flex flex-wrap align-center px-3 w-full">
+                        <p>${isWishlist ? "All items on " : ""}
+                            <span class="font-bold">${wishlistDetail.name}</span> have been added to the cart successfully.
+                        </p>
+                    </div>
+                </div>`);
+                $('body').append(notif);
+                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+          
+                await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
+                notif.remove();
+                return ({success: true });
+              } else {
+                throw new Error('Failed to add items to the cart');
+              }
+            } catch (error) {
+              console.error(error);
+              return ({success: false });
+            }
+        }
+          
 
         function setLocalStorage(key, value) {
             localStorage.setItem(key, JSON.stringify(value));
@@ -1987,7 +2358,6 @@
         // //-- start login popup
         let storeSetting = localStorage.getItem("storeSetting")
         storeSetting = JSON.parse(storeSetting) ?? null
-        console.log("storeSetting =>",storeSetting)
     
         const textColor = storeSetting !== null ? storeSetting?.loginPromptSettings?.color : ""
         const text = storeSetting !== null ? storeSetting?.loginPromptSettings?.promptText && storeSetting?.loginPromptSettings?.promptText !== "" ? storeSetting?.loginPromptSettings?.promptText : "" : ""
