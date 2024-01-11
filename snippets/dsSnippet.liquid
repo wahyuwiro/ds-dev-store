@@ -1,15 +1,697 @@
 <!-- Include jQuery library (make sure to include this before your script) -->
+<script src = "https://code.jquery.com/jquery-3.6.4.min.js"></script> 
 {{ 'dsStyle.css' | asset_url | stylesheet_tag }}
-
+{% assign icon_close = 'icon-close' | append: '.liquid' %}
+{% assign icon_remove = 'icon-remove' | append: '.liquid' %}
 <script >
     let wishlistActivator, wishlistPopover, capsuleActivator, capsulePopover;
+    const appUrl = "http://staging.twixo.io/api/v1";
+    const localUrl = "http://localhost:3000/api/v1";
+    let loader;
     
-    jQuery(document).ready(function($) {
+    const icons = {
+        user: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" class="fill-white"><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"/></svg>',
+        tag: '<svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill:#fff" class="mx-auto"><path d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/></svg>',
+        chevronUp: '<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512"><path d="M233.4 105.4c12.5-12.5 32.8-12.5 45.3 0l192 192c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L256 173.3 86.6 342.6c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3l192-192z"/></svg>',
+        chevronDown: '<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512"><path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/></svg>',
+        expand: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M13.4528 1.0415C13.2871 1.0415 13.1281 1.10735 13.0109 1.22456C12.8937 1.34177 12.8278 1.50074 12.8278 1.6665C12.8278 1.83226 12.8937 1.99124 13.0109 2.10845C13.1281 2.22566 13.2871 2.2915 13.4528 2.2915H16.8245L12.0578 7.05817C11.944 7.1761 11.8811 7.33401 11.8826 7.49788C11.8841 7.66175 11.9499 7.81848 12.0658 7.93431C12.1818 8.05013 12.3386 8.11579 12.5024 8.11714C12.6663 8.11848 12.8242 8.05541 12.942 7.9415L17.7087 3.17484V6.54734C17.7087 6.7131 17.7745 6.87207 17.8917 6.98928C18.0089 7.10649 18.1679 7.17234 18.3337 7.17234C18.4994 7.17234 18.6584 7.10649 18.7756 6.98928C18.8928 6.87207 18.9587 6.7131 18.9587 6.54734V1.6665C18.9587 1.50074 18.8928 1.34177 18.7756 1.22456C18.6584 1.10735 18.4994 1.0415 18.3337 1.0415H13.4528ZM6.54783 18.9582C6.71359 18.9582 6.87256 18.8923 6.98977 18.7751C7.10698 18.6579 7.17283 18.4989 7.17283 18.3332C7.17283 18.1674 7.10698 18.0084 6.98977 17.8912C6.87256 17.774 6.71359 17.7082 6.54783 17.7082H3.17616L7.94283 12.9415C8.00249 12.8838 8.05007 12.8148 8.08279 12.7386C8.11551 12.6623 8.13271 12.5803 8.13339 12.4973C8.13408 12.4143 8.11822 12.332 8.08676 12.2552C8.0553 12.1784 8.00886 12.1087 7.95015 12.05C7.89144 11.9914 7.82163 11.945 7.74481 11.9136C7.66799 11.8822 7.58568 11.8664 7.50269 11.8672C7.41971 11.8679 7.3377 11.8852 7.26147 11.918C7.18523 11.9508 7.11629 11.9985 7.05866 12.0582L2.29199 16.8248V13.4523C2.29199 13.3703 2.27583 13.289 2.24442 13.2132C2.21301 13.1373 2.16697 13.0684 2.10893 13.0104C2.0509 12.9524 1.982 12.9063 1.90617 12.8749C1.83034 12.8435 1.74907 12.8273 1.66699 12.8273C1.58492 12.8273 1.50364 12.8435 1.42782 12.8749C1.35199 12.9063 1.28309 12.9524 1.22505 13.0104C1.16701 13.0684 1.12098 13.1373 1.08957 13.2132C1.05816 13.289 1.04199 13.3703 1.04199 13.4523V18.3332C1.04199 18.6782 1.32199 18.9582 1.66699 18.9582H6.54783Z" /></svg>',
+        share: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 10.7202C11.4933 10.7202 11.04 10.9202 10.6933 11.2335L5.94 8.46683C5.97333 8.3135 6 8.16016 6 8.00016C6 7.84016 5.97333 7.68683 5.94 7.5335L10.64 4.7935C11 5.12683 11.4733 5.3335 12 5.3335C13.1067 5.3335 14 4.44016 14 3.3335C14 2.22683 13.1067 1.3335 12 1.3335C10.8933 1.3335 10 2.22683 10 3.3335C10 3.4935 10.0267 3.64683 10.06 3.80016L5.36 6.54016C5 6.20683 4.52667 6.00016 4 6.00016C2.89333 6.00016 2 6.8935 2 8.00016C2 9.10683 2.89333 10.0002 4 10.0002C4.52667 10.0002 5 9.7935 5.36 9.46016L10.1067 12.2335C10.0733 12.3735 10.0533 12.5202 10.0533 12.6668C10.0533 13.7402 10.9267 14.6135 12 14.6135C13.0733 14.6135 13.9467 13.7402 13.9467 12.6668C13.9467 11.5935 13.0733 10.7202 12 10.7202Z"/></svg>',
+        search: '<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512"><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"/></svg>',
+        shoppingBag: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><g clip-path="url(#clip0_178_22442)"><path d="M11.1691 6.84615V3.38462C11.1691 2.61957 10.8353 1.88585 10.241 1.34488C9.64676 0.803914 8.84077 0.5 8.00037 0.5C7.15997 0.5 6.35399 0.803914 5.75973 1.34488C5.16548 1.88585 4.83163 2.61957 4.83163 3.38462V6.84615M14.4274 5.31308L15.4947 14.5438C15.5538 15.0554 15.1144 15.5 14.5491 15.5H1.45164C1.31831 15.5001 1.18643 15.4747 1.06459 15.4254C0.942743 15.3761 0.833651 15.3041 0.744398 15.2139C0.655145 15.1237 0.587727 15.0175 0.546525 14.902C0.505323 14.7866 0.491259 14.6646 0.505244 14.5438L1.57332 5.31308C1.59796 5.10043 1.7082 4.90362 1.8828 4.76058C2.0574 4.61755 2.28399 4.53842 2.51887 4.53846H13.4819C13.9686 4.53846 14.3767 4.87308 14.4274 5.31308ZM5.14851 6.84615C5.14851 6.92266 5.11512 6.99603 5.0557 7.05013C4.99627 7.10422 4.91567 7.13462 4.83163 7.13462C4.74759 7.13462 4.66699 7.10422 4.60757 7.05013C4.54814 6.99603 4.51476 6.92266 4.51476 6.84615C4.51476 6.76965 4.54814 6.69628 4.60757 6.64218C4.66699 6.58808 4.74759 6.55769 4.83163 6.55769C4.91567 6.55769 4.99627 6.58808 5.0557 6.64218C5.11512 6.69628 5.14851 6.76965 5.14851 6.84615ZM11.486 6.84615C11.486 6.92266 11.4526 6.99603 11.3932 7.05013C11.3338 7.10422 11.2532 7.13462 11.1691 7.13462C11.0851 7.13462 11.0045 7.10422 10.945 7.05013C10.8856 6.99603 10.8522 6.92266 10.8522 6.84615C10.8522 6.76965 10.8856 6.69628 10.945 6.64218C11.0045 6.58808 11.0851 6.55769 11.1691 6.55769C11.2532 6.55769 11.3338 6.58808 11.3932 6.64218C11.4526 6.69628 11.486 6.76965 11.486 6.84615Z" stroke="white" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="clip0_178_22442"><rect width="16" height="16"/></clipPath></defs></svg>',
+        dres: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><g clip-path="url(#clip0_178_22566)"><path d="M16.7733 16.3828C16.771 16.3761 16.7681 16.3696 16.7647 16.3633L13.2116 8.79609L14.8132 6.28203C14.8163 6.27752 14.8192 6.27283 14.8218 6.26797C14.9383 6.07373 14.9998 5.8515 14.9998 5.625C14.9998 5.3985 14.9383 5.17627 14.8218 4.98203C14.8147 4.96953 14.8062 4.95703 14.7983 4.94531L13.1249 2.55469V0.625C13.1249 0.45924 13.0591 0.300269 12.9418 0.183058C12.8246 0.065848 12.6657 0 12.4999 0C12.3341 0 12.1752 0.065848 12.058 0.183058C11.9408 0.300269 11.8749 0.45924 11.8749 0.625V2.53281L11.464 3.04688C11.2883 3.26643 11.0655 3.44366 10.8121 3.56546C10.5587 3.68725 10.2811 3.75049 9.9999 3.75049C9.71873 3.75049 9.44115 3.68725 9.18772 3.56546C8.9343 3.44366 8.7115 3.26643 8.53584 3.04688L8.1249 2.53281V0.625C8.1249 0.45924 8.05906 0.300269 7.94185 0.183058C7.82464 0.065848 7.66566 0 7.4999 0C7.33414 0 7.17517 0.065848 7.05796 0.183058C6.94075 0.300269 6.8749 0.45924 6.8749 0.625V2.55469L5.20147 4.94531C5.19365 4.95703 5.18506 4.96953 5.17803 4.98203C5.06153 5.17627 4.99999 5.3985 4.99999 5.625C4.99999 5.8515 5.06153 6.07373 5.17803 6.26797C5.18061 6.27283 5.18348 6.27752 5.18662 6.28203L6.78819 8.79609L3.23506 16.3633C3.23173 16.3696 3.22886 16.3761 3.22647 16.3828C3.14505 16.5729 3.11205 16.7802 3.13044 16.9862C3.14883 17.1921 3.21803 17.3903 3.33184 17.563C3.44565 17.7356 3.60051 17.8773 3.78255 17.9754C3.96459 18.0735 4.16812 18.1249 4.3749 18.125H15.6249C15.8318 18.125 16.0354 18.0737 16.2175 17.9757C16.3997 17.8777 16.5546 17.736 16.6685 17.5633C16.7824 17.3906 16.8517 17.1924 16.8701 16.9864C16.8886 16.7803 16.8556 16.573 16.7741 16.3828H16.7733ZM6.2499 5.625L7.5335 3.79453L7.55928 3.82734C7.85204 4.19345 8.22341 4.48901 8.64589 4.69211C9.06837 4.89522 9.53114 5.00068 9.9999 5.00068C10.4687 5.00068 10.9314 4.89522 11.3539 4.69211C11.7764 4.48901 12.1478 4.19345 12.4405 3.82734L12.4663 3.79453L13.7499 5.625L12.1577 8.125H7.84287L6.2499 5.625ZM4.3749 16.875L7.896 9.375H12.1022L15.6249 16.875H4.3749Z"/></g><defs><clipPath id="clip0_178_22566"><rect width="20" height="20"/></clipPath></defs></svg>',
+        duplicate: '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M15.8984 5H7.22656C5.99687 5 5 5.99687 5 7.22656V15.8984C5 17.1281 5.99687 18.125 7.22656 18.125H15.8984C17.1281 18.125 18.125 17.1281 18.125 15.8984V7.22656C18.125 5.99687 17.1281 5 15.8984 5Z" stroke="white" stroke-linejoin="round"/><path d="M14.9805 5L15 4.0625C14.9984 3.48285 14.7674 2.9274 14.3575 2.51753C13.9476 2.10765 13.3922 1.87665 12.8125 1.875H4.375C3.71256 1.87696 3.07781 2.14098 2.6094 2.6094C2.14098 3.07781 1.87696 3.71256 1.875 4.375V12.8125C1.87665 13.3922 2.10765 13.9476 2.51753 14.3575C2.9274 14.7674 3.48285 14.9984 4.0625 15H5M11.5625 8.4375V14.6875M14.6875 11.5625H8.4375" stroke="white" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        link: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><g clip-path="url(#clip0_179_48976)"><path d="M9.52533 8.11093C9.26287 7.84843 9.10707 7.49794 9.08804 7.12723C9.06902 6.75652 9.18812 6.39192 9.42233 6.10393L9.52533 5.98993L11.6463 3.86793C12.7549 2.75271 14.257 2.11727 15.8294 2.09834C17.4017 2.0794 18.9187 2.67849 20.0538 3.76669C21.1889 4.85489 21.8515 6.34521 21.8989 7.91697C21.9463 9.48873 21.3748 11.0163 20.3073 12.1709L20.1323 12.3539L18.0103 14.4749C17.7382 14.7458 17.3726 14.902 16.9888 14.9114C16.605 14.9208 16.2322 14.7826 15.9472 14.5254C15.6621 14.2682 15.4866 13.9115 15.4567 13.5287C15.4268 13.146 15.5447 12.7663 15.7863 12.4679L15.8893 12.3539L18.0103 10.2319C18.5574 9.68073 18.8695 8.93884 18.8808 8.16229C18.8922 7.38575 18.6019 6.63506 18.0711 6.06813C17.5403 5.5012 16.8103 5.1622 16.0347 5.12244C15.2591 5.08268 14.4983 5.34525 13.9123 5.85493L13.7683 5.98993L11.6463 8.11093C11.365 8.39214 10.9836 8.55011 10.5858 8.55011C10.1881 8.55011 9.80662 8.39214 9.52533 8.11093ZM8.81833 15.1819C8.55587 14.9194 8.40007 14.5689 8.38104 14.1982C8.36202 13.8275 8.48112 13.4629 8.71533 13.1749L8.81833 13.0609L13.0613 8.81793C13.3331 8.54516 13.6994 8.38736 14.0843 8.3772C14.4692 8.36703 14.8433 8.50528 15.1291 8.76333C15.4149 9.02137 15.5905 9.37944 15.6196 9.7634C15.6487 10.1474 15.529 10.5278 15.2853 10.8259L15.1823 10.9399L10.9393 15.1819C10.658 15.4631 10.2766 15.6211 9.87883 15.6211C9.48109 15.6211 9.09962 15.4631 8.81833 15.1819ZM3.86833 20.1319C2.77428 19.0377 2.14527 17.5631 2.11266 16.0161C2.08005 14.4691 2.64637 12.9693 3.69333 11.8299L3.86833 11.6459L5.99033 9.52593C6.26243 9.25508 6.62803 9.09887 7.01185 9.08947C7.39566 9.08008 7.76847 9.21821 8.05349 9.47543C8.33852 9.73264 8.51407 10.0894 8.54399 10.4721C8.57391 10.8549 8.45593 11.2345 8.21433 11.5329L8.11133 11.6469L5.99033 13.7669C5.43995 14.3174 5.12511 15.0603 5.1123 15.8386C5.09949 16.617 5.38972 17.3698 5.92169 17.9381C6.45366 18.5064 7.1857 18.8457 7.96318 18.8843C8.74067 18.9229 9.50271 18.6578 10.0883 18.1449L10.2323 18.0099L12.3543 15.8899C12.6264 15.6191 12.992 15.4629 13.3758 15.4535C13.7597 15.4441 14.1325 15.5822 14.4175 15.8394C14.7025 16.0966 14.8781 16.4534 14.908 16.8361C14.9379 17.2189 14.8199 17.5985 14.5783 17.8969L14.4753 18.0099L12.3543 20.1319C11.7972 20.6892 11.1357 21.1312 10.4077 21.4328C9.67965 21.7344 8.89935 21.8896 8.11133 21.8896C7.32332 21.8896 6.54302 21.7344 5.815 21.4328C5.08698 21.1312 4.4255 20.6892 3.86833 20.1319Z"/></g><defs><clipPath id="clip0_179_48976"><rect width="24" height="24" fill="white" transform="matrix(0 -1 1 0 0 24)"/></clipPath></defs></svg>',
+        error: `<svg style="width: 20px" aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 13 13">
+            <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
+            <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
+            <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
+            <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
+        </svg>`,
+    }
+    
+    const removeQueryString = (url) => {
+        return url.split('?')[0];
+    }
+
+    function setLocalStorage(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    function getLocalStorage(key) {
+        const storedValue = localStorage.getItem(key);
+        if (storedValue !== null && storedValue !== undefined) {
+          try {
+            return JSON.parse(storedValue);
+          } catch (error) {
+            console.error(`Error parsing JSON for key '${key}':`, error);
+          }
+        }      
+        return null;
+    }
+
+    function groupByProperty(items, propertyName) {
+        return items.reduce((result, item) => {
+            const key = item[propertyName];
+            const { [propertyName]: propertyValue, ...rest } = item;
+    
+            if (!result[key])  result[key] = [];
+    
+            result[key].push(rest);
+            return result;
+        }, {});
+    }
+
+    async function getWishlist(userId, store, id="") {
+        try {
+            const param = id !== "" ? { param: JSON.stringify({id: id}) } : {};
+            const requestOptions = {
+                url: `${appUrl}/wishlist`,
+                method: "GET",
+                data: {
+                    userId: userId,
+                    store: store,
+                    page: 1,
+                    limit: 10,
+                    sort: {
+                        key: 'Created Date',
+                        direction: 'desc',
+                    },
+                    ...param,
+                },
+                timeout: 0,
+            };
+            return new Promise((resolve, reject) => {
+                $.ajax(requestOptions)
+                    .done(function (response) {
+                        const res = response.data.items;
+                        if (res) {
+                            const simplifiedWishlist = res.map(item => ({
+                                _id: item._id,
+                                store: item.store,
+                                name: item.name,
+                                products: item.products.map(product => ({
+                                    _id: product._id,
+                                    productId: product.productId,
+                                    productName: product.productName,
+                                    productPrice: product.productPrice,
+                                    productSize: product.productSize,
+                                    productPriceCurrency :  product.productPriceCurrency ? product.productPriceCurrency : "",
+                                    productVariant: product.productVariant,
+                                    productImage: removeQueryString(product.productImage),
+                                    capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
+                                })),
+                                comments: item.comments.map(comment => ({
+                                    comment: comment.comment,
+                                    createdAt: comment.createdAt,
+                                    commentedBy: {
+                                        first_name: comment.commentedBy.first_name,
+                                        last_name: comment.commentedBy.last_name,
+                                        email: comment.commentedBy.email,
+                                        userId: comment.commentedBy.userId,
+                                    }
+                                })), 
+                            }));
+                            if(id === "") setLocalStorage('wishlist', simplifiedWishlist); // no need save for getWishlist by id
+
+                            resolve({
+                                success: true,
+                                data: response.data, 
+                                simplified: simplifiedWishlist
+                            });
+                        }else{
+                            reject(new Error("No data in the response"));
+                        }
+                    }).fail(function (jqXHR, textStatus, errorThrown) {
+                        // Reject the promise with the error details
+                        reject(new Error(`AJAX request failed: ${textStatus}, ${errorThrown}`));
+                    });
+            });
+
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+    }
+
+    async function addComment(data) {
+        console.log("addComment data: ",data)
+        try {
+            const store = `https://{{ shop.domain }}`;
+            const first_name = `{{ customer.first_name }}`;
+            const last_name = `{{ customer.last_name }}`;
+            const email =  `{{ customer.email }}`;
+            const userId = `{{ customer.id }}`;
+            const obj = {
+                store,
+                comments: data?.comments ? [{
+                    comment: data?.comments,
+                    commentedBy: {
+                        first_name,
+                        last_name,
+                        email,
+                        userId
+                    }
+                }] : undefined,
+                createdBy: {
+                    first_name,
+                    last_name,
+                    email,
+                    userId
+                }
+            };
+            console.log("obj =>",obj)
+            const requestOptions = {
+                method: 'POST',
+                body: JSON.stringify(obj),
+                redirect: 'follow'
+            };
+            const response = await fetch(`${appUrl}/wishlist/${data.wishlistId}/comment`, requestOptions);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const result = await response.json();
+            return({
+                success: true,
+                ...result
+            })
+
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+    }
+    async function getProductById(id) {
+        const handle = (await fetch(`/search/suggest.json?q=id:${id}&resources[type]=product&limit=1`)
+            .then(response => response.json())
+            .then(response => response.resources.results.products.shift())).handle;
+    
+        return await fetch(`/products/${handle}.js`).then(response => response.json());
+    }
+
+    const renderProductDetail = async(data) => {
+        console.log("renderProductDetail data =>",data)
+        const div = document.createElement('DIV');
+        div.classList.add('flex', 'w-full', 'product-single')
+        div.style.minHeight = '430px';
+        div.innerHTML = `
+        <div class="column-images flex">
+            <div class="product-thumbnails">
+                ${data?.images.map(image => `<img src="${image}" />`).join('')}
+            </div>
+            <div class="product-images">
+                <img src="${data?.featured_image}" />
+            </div>        
+        </div>
+        <div class="column-details">
+            <label>Capsule</label>
+            <br />
+            <div class="select-botton-container">
+              <div class="dropdown">
+                  <button class="dropbtn drop-capsule bg-none no-border text-left">
+                      <div class="chevron right-0">                              
+                          ${icons.chevronDown}
+                      </div>
+                      <span>${data?.capsule && data?.capsule !== "" ? data?.capsule : "Select"} </span>
+                  </button>
+                  <div class="dropdown-content w-full" style="display: none;">
+                  </div>
+              </div>
+            </div>
+            <h1 class="product-title">${data?.title}</h1> 
+            <div> 
+                <p class="product-vendor m-0">${data?.vendor}</p>
+            </div>
+            <p class="price"><span>${data.priceCurrency && data.priceCurrency !== "" ? data.priceCurrency : data?.price}</span></p>
+            <div class="product-form">
+                <div class="select-size">
+                    Select Size:
+                </div>
+                <div class="product-form-item-inner">
+                    <fieldset class="single-option-radio" name="size" id="ProductSelect-option-1" style="display: block;">
+                        ${data?.variants.map((variant, index) => `<input
+                            type="radio" ${variant.id === data?.productVariant ? 'checked="checked"' : ''}  value="${variant?.id}" name="size" class="single-option-selector"
+                            id="ProductSelect-option-size-${index}" data-variant-id="${variant?.id}"> 
+                            <label for="ProductSelect-option-size-${index}" ><span>${variant?.title}</span></label>`).join('')}
+                    </fieldset>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" name="add" class="addtocart btn product-button">
+                        <span>ADD TO CART</span>
+                    </button>
+                </div>
+            </div>
+            <div class="product-description">
+                <p>${data?.description}.</p>
+            </div>
+            <div class="collapsible flex justify-between" data-content-id="collapsContent1" data-button-id="btnCollaps1">
+                <div>PRODUCT DETAILS</div>
+                <button class="btn-collaps">+</button>
+            </div>
+            <div class="collaps-content" id="collapsContent1">
+                <p></p>        
+            </div>
+    
+            <div class="collapsible" data-content-id="collapsContent2" data-button-id="btnCollaps2">
+                <div>SHIPPING & RETURNS</div>
+                <button class="btn-collaps">+</button>
+            </div>
+            <div class="collaps-content" id="collapsContent2">
+                <p></p>
+            </div>
+
+        </div>
+        `;
+        return div;
+    }
+
+    function getInitials(str) {
+        var words = str.split(' ');
+        var initials = words.map(function(word) {
+          return word.charAt(0);
+        }).join('');
+        return initials.toUpperCase();
+    }
+
+    const renderLoader = async(minHeight = "430px") => {
+        const d = document.createElement('DIV');
+        d.classList.add('flex', 'flex-wrap', 'align-center', 'render-loader');
+        d.style.minHeight = minHeight;
+        d.innerHTML = `<div class="loader" style="display: block"></div>`
+        return d;            
+    }
+    
+    const renderComment = (data) => {
+        const fullName = `${data.commentedBy.first_name} ${data.commentedBy.last_name}`
+        const div = document.createElement('DIV');
+        div.classList.add('flex', 'w-full', 'justify-between', 'gap-8', 'mb-5');
+        div.innerHTML = `
+        <div class="flex justify-between w-full gap-8 mb-5">
+            <div class="flex flex-wrap align-center">
+                <div class="bullet rounded-full">
+                    <div class="text-center w-full">
+                        <span class="text-center w-full">${getInitials(fullName)}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex w-full">
+                <div class="input-group w-full">
+                    <div class="text">
+                        <label>${fullName}<label>
+                        <p>${data.comment}</p>
+                    </div>
+                    <div class="time">
+                        <p>${timeAgo(data.createdAt)}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        `;
+        return div;
+    };
+
+    const handlelistComment = (isFirst = true, isOpen, comments, isPopup = true) => {
+        console.log("handlelistComment =>",{
+            isOpen: isOpen,
+            comments: comments,
+        })
+        if(isFirst) comments = comments.slice(0,3)
+        const container = isPopup ? $('#my-wishlist-detail') : $('.page-width').find('.detail-content');
+
+        container.find(".comment .btn-chevron").empty();
+        container.find(".comment .btn-chevron").html(`${isOpen ? icons.chevronUp : icons.chevronDown}`);
+
+        if(!isFirst) {
+            container.find("#my-wishlist-detail-content").css({display: isOpen ? "none" : ""});
+            container.find(".sub-heading").css({display: isOpen ? "none" : ""})
+        }
+
+        if(isOpen) {
+            if(comments) {
+                container.find("#list-comment").html("")
+                comments.forEach((comment) => {
+                    const rComment = renderComment(comment)
+                    container.find("#list-comment").prepend(rComment)
+                })
+            }
+        }else{
+            container.find("#list-comment").html("")
+
+        }
+    }
+
+    function timeAgo(createdAt) {
+        const currentDate = new Date();
+        const createdDate = new Date(createdAt);
+    
+        const timeDifference = currentDate - createdDate;
+        const seconds = Math.floor(timeDifference / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        const weeks = Math.floor(days / 7);
+        const months = Math.floor(days / 30);
+    
+        if (months > 0) {
+            return months === 1 ? '1 month ago' : `${months} months ago`;
+        } else if (weeks > 0) {
+            return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
+        } else if (days > 0) {
+            return days === 1 ? '1 day ago' : `${days} days ago`;
+        } else if (hours > 0) {
+            return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+        } else if (minutes > 0) {
+            return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
+        } else {
+            return 'Just now';
+        }
+    }
+
+    const createConfirm = (text="") => {
+        const modal = $(`
+            <div id="confirm-modal" class="modal" style="display: block">
+                <div class="modal-content" style="width: 385px;">
+                  <div class="modal-body p-0 text-center">
+                    <p>${text === "" ? "Are you sure want to remove the item? You cannot undo this step." : text }</p>
+                    <div class="confirm flex gap-4 w-1/2 mx-auto">
+                        <button id="confirm-no" class="p-2">No</button>
+                        <button id="confirm-yes" class="p-2">Yes</button>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        `);
+        return modal;
+    }
+
+    const createNotification = (content) => {
+        const modal = $(`
+            <div id="notification" class="modal" style="display: block">
+                <div class="modal-content bg-white p-5" style="top: 13%; left: 0; transform: unset; width: 544px; margin: 0; background: #F5F5F5;">
+                    <div class="modal-body">
+                        <div class="block relative">
+                            <div id="btn-close" class="top-0 right-0 absolute cursor-pointer btn-close">
+                                {% include icon_close %}
+                            </div>
+                        </div>
+                        ${content}
+                    </div>
+                </div>
+            </div>
+        `);
+        return modal;
+    }
+
+    async function addToCart(items, wishlistDetail, isWishlist=true) {
+        const formData = { 'items': items };
+      
+        try {
+          const response = await fetch(window.Shopify.routes.root + 'cart/add.js', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+          });
+      
+          // Check if the request was successful (status code 2xx)
+          if (response.ok) {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+            //$("#my-wishlist-modal").remove();
+            const notif = createNotification(`<div class="flex">
+                <img src="${wishlistDetail.productImage}" width="64">
+                <div class="flex flex-wrap align-center px-3 w-full">
+                    <p>${isWishlist ? "All items on " : ""}
+                        <span class="font-bold">${wishlistDetail.name}</span> have been added to the cart successfully.
+                    </p>
+                </div>
+            </div>`);
+            $('body').append(notif);
+            notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+      
+            await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
+            notif.remove();
+            return ({success: true });
+          } else {
+            throw new Error('Failed to add items to the cart');
+          }
+        } catch (error) {
+          console.error(error);
+          return ({success: false });
+        }
+    }
+    
+    // //-- start login popup
+    let storeSetting = localStorage.getItem("storeSetting")
+    storeSetting = JSON.parse(storeSetting) ?? null
+
+    const textColor = storeSetting !== null ? storeSetting?.loginPromptSettings?.color : ""
+    const text = storeSetting !== null ? storeSetting?.loginPromptSettings?.promptText && storeSetting?.loginPromptSettings?.promptText !== "" ? storeSetting?.loginPromptSettings?.promptText : "" : ""
+
+    const loginFormString = `{%- form 'customer_login', novalidate: 'novalidate' -%}
+    {%- if form.errors -%}
+        {% unless template.name == 'register'  %}
+        <h2 class="form__message" tabindex="-1" autofocus>
+        <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+        ${icons.error}
+        {{ 'templates.contact.form.error_heading' | t }}
+        </h2>
+        {{ form.errors | default_errors }}
+        {% endunless %}
+    {%- endif -%}
+
+    <div class="modal-field">        
+        <input
+            type="email"
+            name="customer[email]"
+            id="CustomerEmail"
+            autocomplete="email"
+            autocorrect="off"
+            autocapitalize="off"
+            {% if form.errors contains 'form' %}
+                aria-invalid="true"
+            {% endif %}
+            placeholder="{{ 'customer.login_page.email' | t }}"
+            required
+            class="modal-input"
+        >
+    </div>
+
+    {%- if form.password_needed -%}
+        <div class="modal-field">          
+            <input
+                type="password"
+                value=""
+                name="customer[password]"
+                id="CustomerPassword"
+                autocomplete="current-password"
+                {% if form.errors contains 'form' %}
+                aria-invalid="true"
+                {% endif %}
+                placeholder="{{ 'customer.login_page.password' | t }}"
+                required
+                class="modal-input"
+            >
+            <a href="#recover">FORGOT?</a>
+        </div>
+
+    {%- endif -%}
+
+    <button>
+        LOGIN
+    </button>
+    
+    {%- endform -%}`
+
+    
+    const registerFormString = `{%- form 'create_customer', novalidate: 'novalidate' -%}
+    {%- if form.errors -%}
+        {% unless template.name == 'login'  %}
+        <h2 class="form__message" tabindex="-1" autofocus>
+        <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+        ${icons.error}
+        {{ 'templates.contact.form.error_heading' | t }}
+        </h2>
+        <ul> 
+        {%- for field in form.errors -%}
+            <li>
+            {%- if field == 'form' -%}
+                {{ form.errors.messages[field] }}
+            {%- else -%}
+                <a href="#RegisterForm-{{ field }}">
+                {{ form.errors.translated_fields[field] | capitalize }}
+                {{ form.errors.messages[field] }}
+                </a>
+            {%- endif -%}
+            </li>
+        {%- endfor -%}
+        </ul>
+    {% endunless %}
+    {%- endif -%}
+    <div class="modal-field">      
+        <input
+        type="text"
+        name="customer[first_name]"
+        id="RegisterForm-FirstName"
+        {% if form.first_name %}value="{{ form.first_name }}"{% endif %}
+        autocomplete="given-name"
+        placeholder="{{ 'customer.register.first_name' | t }}"
+        class="modal-input"
+        required
+        >
+    </div>
+    <div class="modal-field">
+        <input
+        type="text"
+        name="customer[last_name]"
+        id="RegisterForm-LastName"
+        {% if form.last_name %}value="{{ form.last_name }}"{% endif %}
+        autocomplete="family-name"
+        placeholder="{{ 'customer.register.last_name' | t }}"
+        class="modal-input"
+        required
+        >
+    </div>
+    <div class="modal-field">      
+        <input
+        type="email"
+        name="customer[email]"
+        id="RegisterForm-email"
+        {% if form.email %} value="{{ form.email }}"{% endif %}
+        spellcheck="false"
+        autocapitalize="off"
+        autocomplete="email"
+        aria-required="true"
+        {% if form.errors contains 'email' %}
+            aria-invalid="true"
+            aria-describedby="RegisterForm-email-error"
+        {% endif %}
+        placeholder="{{ 'customer.register.email' | t }}"
+        class="modal-input"
+        required
+        >
+    </div>
+    {%- if form.errors contains 'email' -%}
+        <span id="RegisterForm-email-error" class="form__message">
+        <svg aria-hidden="true" focusable="false" role="presentation">
+            <use href="#icon-error" />
+        </svg>
+        {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}.
+        </span>
+    {%- endif -%}
+    <div class="modal-field">     
+        <input
+        type="password"
+        name="customer[password]"
+        id="RegisterForm-password"
+        aria-required="true"
+        {% if form.errors contains 'password' %}
+            aria-invalid="true"
+            aria-describedby="RegisterForm-password-error"
+        {% endif %}
+        placeholder="{{ 'customer.register.password' | t }}"
+        class="modal-input"
+        required
+        >
+    </div>
+    {%- if form.errors contains 'password' -%}
+        <span id="RegisterForm-password-error" class="form__message">
+        <svg aria-hidden="true" focusable="false" role="presentation">
+            <use href="#icon-error" />
+        </svg>
+        {{ form.errors.translated_fields['password'] | capitalize }} {{ form.errors.messages['password'] }}.
+        </span>
+    {%- endif -%}
+    <button>
+        CREATE ACCOUNT
+    </button>
+    {%- endform -%}
+    `
+
+    const closeModalButton = $(`<div id="close-modal" class="btn-close cursor-pointer flex justify-end align-center">{% include icon_close %}</div> `)    
+
+    const loginModal = $(`<div id="login-modal" class="modal" style="display: none;">
+        <div class="login-modal" id="modal-dialog">
+            <div class="modal-header">
+            <h3 style="color: ${textColor}">My Wishlist</h3>
+            <p style="color: ${textColor}">${text !== "" ? text : "My Wishlist allows you to keep track of all of your favorites and shopping activity whether you're on your computer, phone, or tablet. You won't have to waste time searching all over again for that item you loved on your phone the other day - it's all here in one place!<br/>And you must have an account and be logged in to save items to your wishlist."}</p>
+            </div>
+            <div class="modal-body">
+            <div class="auth-items">
+                <div class="auth-item">
+                <h4>LOGIN</h4>
+                ${loginFormString}
+                </div>
+                <div class="auth-item">
+                <h4>CREATE AN ACCOUNT</h4>
+                ${registerFormString}
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>`)
+        
+    const openLoginModal = () => {
+        $("body").append(loginModal);
+        let st = JSON.parse(getCookie("storeSetting"));
+        const textColor = st !== null ? st.loginPromptSettings.color : ""
+        const text = st !== null ? st.loginPromptSettings.promptText && st.loginPromptSettings.promptText !== "" ? st.loginPromptSettings.promptText : "" : ""
+        // force re-new, for new update (localstorage)
+        const modalHeader = loginModal.find('.modal-header')
+        if(modalHeader && text !== "") {
+            modalHeader.html('');
+            const newContent = $(`
+                <h3 style="color:${textColor}">My Wishlist</h3>
+                <p style="color:${textColor}">${text}</p>`);
+            modalHeader.append(newContent);
+        }
+        closeModalButton.prependTo(".login-modal#modal-dialog")
+        loginModal.show()
+    }
+    
+    $(document).on('click', '#close-modal', () => loginModal.remove())
+    // //-- end login popup
+
+    // Function to set a cookie
+    function setCookie(name, value, daysToExpire) {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + daysToExpire * 24 * 60 * 60 * 1000);
+        document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        
+        // Check if the cookie was successfully set
+        const allCookies = document.cookie;
+        const cookieExists = allCookies.includes(`${name}=${value}`);
+        
+        if (cookieExists) {
+            //console.log(`Cookie '${name}' was successfully set.`);
+        } else {
+            console.error(`Failed to set cookie '${name}'.`);
+        }
+    }
+
+    // Function to get a cookie by name
+    function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (const cookie of cookies) {
+            const [cookieName, cookieValue] = cookie.trim().split('=');
+            if (cookieName === name) {
+                return cookieValue;
+            }
+        }
+        return null;
+    }
+
+    // Function to delete a cookie by name
+    function deleteCookie(name) {
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+    }
+
+    jQuery(document).ready(async function($) {
         const getElementValue = (id) => document.getElementById(id).value;
 
         const currentUrl = window.location.href;
         const customerId = `{{ customer.id }}`;
         const storeDomain = `https://{{ shop.domain }}`;
+        const store = `https://{{ shop.domain }}`;
         const shopEmail = `{{ shop.email }}`;
         const shopName = `{{ shop.name }}`
 
@@ -17,6 +699,9 @@
         const last_name = `{{ customer.last_name }}`;
         const email =  `{{ customer.email }}`;
         const userId = `{{ customer.id }}`;
+        let productSize = `{{ product.variants.first.option1 }}`;
+        let productVariant = `{{ product.variants.first.id }}`;
+        let variants
 
         {% comment %} console.log('info =>',{
             shopName: shopName,
@@ -25,189 +710,12 @@
             storeDomain: storeDomain,
         }) {% endcomment %}
 
-        const appUrl = "http://staging.twixo.io/api/v1";
-        const localUrl = "http://localhost:3000/api/v1";
         
-        const icons = {
-            close: `
-                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512">
-                    <path d="M376.6 84.5c11.3-13.6 9.5-33.8-4.1-45.1s-33.8-9.5-45.1 4.1L192 206 56.6 43.5C45.3 29.9 25.1 28.1 11.5 39.4S-3.9 70.9 7.4 84.5L150.3 256 7.4 427.5c-11.3 13.6-9.5 33.8 4.1 45.1s33.8 9.5 45.1-4.1L192 306 327.4 468.5c11.3 13.6 31.5 15.4 45.1 4.1s15.4-31.5 4.1-45.1L233.7 256 376.6 84.5z" />
-                </svg>`,
-            user: `
-                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" class="fill-white" >
-                    <path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z" />
-                </svg>`,
-            tag: `
-                <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff" class="mx-auto">
-                    <path d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
-                </svg>`,
-            chevron: `
-                <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
-                    <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
-                </svg>`,
-            expand: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M13.4528 1.0415C13.2871 1.0415 13.1281 1.10735 13.0109 1.22456C12.8937 1.34177 12.8278 1.50074 12.8278 1.6665C12.8278 1.83226 12.8937 1.99124 13.0109 2.10845C13.1281 2.22566 13.2871 2.2915 13.4528 2.2915H16.8245L12.0578 7.05817C11.944 7.1761 11.8811 7.33401 11.8826 7.49788C11.8841 7.66175 11.9499 7.81848 12.0658 7.93431C12.1818 8.05013 12.3386 8.11579 12.5024 8.11714C12.6663 8.11848 12.8242 8.05541 12.942 7.9415L17.7087 3.17484V6.54734C17.7087 6.7131 17.7745 6.87207 17.8917 6.98928C18.0089 7.10649 18.1679 7.17234 18.3337 7.17234C18.4994 7.17234 18.6584 7.10649 18.7756 6.98928C18.8928 6.87207 18.9587 6.7131 18.9587 6.54734V1.6665C18.9587 1.50074 18.8928 1.34177 18.7756 1.22456C18.6584 1.10735 18.4994 1.0415 18.3337 1.0415H13.4528ZM6.54783 18.9582C6.71359 18.9582 6.87256 18.8923 6.98977 18.7751C7.10698 18.6579 7.17283 18.4989 7.17283 18.3332C7.17283 18.1674 7.10698 18.0084 6.98977 17.8912C6.87256 17.774 6.71359 17.7082 6.54783 17.7082H3.17616L7.94283 12.9415C8.00249 12.8838 8.05007 12.8148 8.08279 12.7386C8.11551 12.6623 8.13271 12.5803 8.13339 12.4973C8.13408 12.4143 8.11822 12.332 8.08676 12.2552C8.0553 12.1784 8.00886 12.1087 7.95015 12.05C7.89144 11.9914 7.82163 11.945 7.74481 11.9136C7.66799 11.8822 7.58568 11.8664 7.50269 11.8672C7.41971 11.8679 7.3377 11.8852 7.26147 11.918C7.18523 11.9508 7.11629 11.9985 7.05866 12.0582L2.29199 16.8248V13.4523C2.29199 13.3703 2.27583 13.289 2.24442 13.2132C2.21301 13.1373 2.16697 13.0684 2.10893 13.0104C2.0509 12.9524 1.982 12.9063 1.90617 12.8749C1.83034 12.8435 1.74907 12.8273 1.66699 12.8273C1.58492 12.8273 1.50364 12.8435 1.42782 12.8749C1.35199 12.9063 1.28309 12.9524 1.22505 13.0104C1.16701 13.0684 1.12098 13.1373 1.08957 13.2132C1.05816 13.289 1.04199 13.3703 1.04199 13.4523V18.3332C1.04199 18.6782 1.32199 18.9582 1.66699 18.9582H6.54783Z" fill="#707070"/>
-                </svg>`,
-            share: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M12 10.7202C11.4933 10.7202 11.04 10.9202 10.6933 11.2335L5.94 8.46683C5.97333 8.3135 6 8.16016 6 8.00016C6 7.84016 5.97333 7.68683 5.94 7.5335L10.64 4.7935C11 5.12683 11.4733 5.3335 12 5.3335C13.1067 5.3335 14 4.44016 14 3.3335C14 2.22683 13.1067 1.3335 12 1.3335C10.8933 1.3335 10 2.22683 10 3.3335C10 3.4935 10.0267 3.64683 10.06 3.80016L5.36 6.54016C5 6.20683 4.52667 6.00016 4 6.00016C2.89333 6.00016 2 6.8935 2 8.00016C2 9.10683 2.89333 10.0002 4 10.0002C4.52667 10.0002 5 9.7935 5.36 9.46016L10.1067 12.2335C10.0733 12.3735 10.0533 12.5202 10.0533 12.6668C10.0533 13.7402 10.9267 14.6135 12 14.6135C13.0733 14.6135 13.9467 13.7402 13.9467 12.6668C13.9467 11.5935 13.0733 10.7202 12 10.7202Z"/>
-                </svg>`,
-            search: `
-                <svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 512 512">
-                    <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
-                </svg>`,
-            shoppingBag: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <g clip-path="url(#clip0_178_22442)">
-                        <path d="M11.1691 6.84615V3.38462C11.1691 2.61957 10.8353 1.88585 10.241 1.34488C9.64676 0.803914 8.84077 0.5 8.00037 0.5C7.15997 0.5 6.35399 0.803914 5.75973 1.34488C5.16548 1.88585 4.83163 2.61957 4.83163 3.38462V6.84615M14.4274 5.31308L15.4947 14.5438C15.5538 15.0554 15.1144 15.5 14.5491 15.5H1.45164C1.31831 15.5001 1.18643 15.4747 1.06459 15.4254C0.942743 15.3761 0.833651 15.3041 0.744398 15.2139C0.655145 15.1237 0.587727 15.0175 0.546525 14.902C0.505323 14.7866 0.491259 14.6646 0.505244 14.5438L1.57332 5.31308C1.59796 5.10043 1.7082 4.90362 1.8828 4.76058C2.0574 4.61755 2.28399 4.53842 2.51887 4.53846H13.4819C13.9686 4.53846 14.3767 4.87308 14.4274 5.31308ZM5.14851 6.84615C5.14851 6.92266 5.11512 6.99603 5.0557 7.05013C4.99627 7.10422 4.91567 7.13462 4.83163 7.13462C4.74759 7.13462 4.66699 7.10422 4.60757 7.05013C4.54814 6.99603 4.51476 6.92266 4.51476 6.84615C4.51476 6.76965 4.54814 6.69628 4.60757 6.64218C4.66699 6.58808 4.74759 6.55769 4.83163 6.55769C4.91567 6.55769 4.99627 6.58808 5.0557 6.64218C5.11512 6.69628 5.14851 6.76965 5.14851 6.84615ZM11.486 6.84615C11.486 6.92266 11.4526 6.99603 11.3932 7.05013C11.3338 7.10422 11.2532 7.13462 11.1691 7.13462C11.0851 7.13462 11.0045 7.10422 10.945 7.05013C10.8856 6.99603 10.8522 6.92266 10.8522 6.84615C10.8522 6.76965 10.8856 6.69628 10.945 6.64218C11.0045 6.58808 11.0851 6.55769 11.1691 6.55769C11.2532 6.55769 11.3338 6.58808 11.3932 6.64218C11.4526 6.69628 11.486 6.76965 11.486 6.84615Z" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
-                    </g>
-                    <defs>
-                        <clipPath id="clip0_178_22442">
-                            <rect width="16" height="16""/>
-                        </clipPath>
-                    </defs>
-                </svg>`,
-            dres: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <g clip-path="url(#clip0_178_22566)">
-                        <path d="M16.7733 16.3828C16.771 16.3761 16.7681 16.3696 16.7647 16.3633L13.2116 8.79609L14.8132 6.28203C14.8163 6.27752 14.8192 6.27283 14.8218 6.26797C14.9383 6.07373 14.9998 5.8515 14.9998 5.625C14.9998 5.3985 14.9383 5.17627 14.8218 4.98203C14.8147 4.96953 14.8062 4.95703 14.7983 4.94531L13.1249 2.55469V0.625C13.1249 0.45924 13.0591 0.300269 12.9418 0.183058C12.8246 0.065848 12.6657 0 12.4999 0C12.3341 0 12.1752 0.065848 12.058 0.183058C11.9408 0.300269 11.8749 0.45924 11.8749 0.625V2.53281L11.464 3.04688C11.2883 3.26643 11.0655 3.44366 10.8121 3.56546C10.5587 3.68725 10.2811 3.75049 9.9999 3.75049C9.71873 3.75049 9.44115 3.68725 9.18772 3.56546C8.9343 3.44366 8.7115 3.26643 8.53584 3.04688L8.1249 2.53281V0.625C8.1249 0.45924 8.05906 0.300269 7.94185 0.183058C7.82464 0.065848 7.66566 0 7.4999 0C7.33414 0 7.17517 0.065848 7.05796 0.183058C6.94075 0.300269 6.8749 0.45924 6.8749 0.625V2.55469L5.20147 4.94531C5.19365 4.95703 5.18506 4.96953 5.17803 4.98203C5.06153 5.17627 4.99999 5.3985 4.99999 5.625C4.99999 5.8515 5.06153 6.07373 5.17803 6.26797C5.18061 6.27283 5.18348 6.27752 5.18662 6.28203L6.78819 8.79609L3.23506 16.3633C3.23173 16.3696 3.22886 16.3761 3.22647 16.3828C3.14505 16.5729 3.11205 16.7802 3.13044 16.9862C3.14883 17.1921 3.21803 17.3903 3.33184 17.563C3.44565 17.7356 3.60051 17.8773 3.78255 17.9754C3.96459 18.0735 4.16812 18.1249 4.3749 18.125H15.6249C15.8318 18.125 16.0354 18.0737 16.2175 17.9757C16.3997 17.8777 16.5546 17.736 16.6685 17.5633C16.7824 17.3906 16.8517 17.1924 16.8701 16.9864C16.8886 16.7803 16.8556 16.573 16.7741 16.3828H16.7733ZM6.2499 5.625L7.5335 3.79453L7.55928 3.82734C7.85204 4.19345 8.22341 4.48901 8.64589 4.69211C9.06837 4.89522 9.53114 5.00068 9.9999 5.00068C10.4687 5.00068 10.9314 4.89522 11.3539 4.69211C11.7764 4.48901 12.1478 4.19345 12.4405 3.82734L12.4663 3.79453L13.7499 5.625L12.1577 8.125H7.84287L6.2499 5.625ZM4.3749 16.875L7.896 9.375H12.1022L15.6249 16.875H4.3749Z"/>
-                    </g>
-                    <defs>
-                        <clipPath id="clip0_178_22566">
-                            <rect width="20" height="20"/>
-                        </clipPath>
-                    </defs>
-                </svg>`,
-            duplicate: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M15.8984 5H7.22656C5.99687 5 5 5.99687 5 7.22656V15.8984C5 17.1281 5.99687 18.125 7.22656 18.125H15.8984C17.1281 18.125 18.125 17.1281 18.125 15.8984V7.22656C18.125 5.99687 17.1281 5 15.8984 5Z" stroke="white" stroke-linejoin="round"/>
-                    <path d="M14.9805 5L15 4.0625C14.9984 3.48285 14.7674 2.9274 14.3575 2.51753C13.9476 2.10765 13.3922 1.87665 12.8125 1.875H4.375C3.71256 1.87696 3.07781 2.14098 2.6094 2.6094C2.14098 3.07781 1.87696 3.71256 1.875 4.375V12.8125C1.87665 13.3922 2.10765 13.9476 2.51753 14.3575C2.9274 14.7674 3.48285 14.9984 4.0625 15H5M11.5625 8.4375V14.6875M14.6875 11.5625H8.4375" stroke="white" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            `,
-            drop: `
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <g clip-path="url(#clip0_178_22624)">
-                        <path d="M9.129 0L11.103 0.005C11.881 0.099 12.563 0.465 13.125 1.083C13.584 1.587 13.825 2.173 13.839 2.811H19.314C19.4968 2.81206 19.6718 2.88563 19.8004 3.01557C19.929 3.1455 20.0008 3.32117 20 3.504C20.0004 3.59448 19.983 3.68415 19.9487 3.7679C19.9144 3.85164 19.864 3.92782 19.8003 3.99208C19.7366 4.05634 19.6609 4.10742 19.5774 4.14241C19.494 4.1774 19.4045 4.19561 19.314 4.196L17.478 4.195V15.822C17.478 18.365 16.529 20 14.437 20H5.419C3.327 20 2.393 18.374 2.393 15.822V4.195H0.686001C0.503614 4.19421 0.328982 4.12113 0.200389 3.99178C0.0717962 3.86244 -0.000265707 3.68739 7.36243e-07 3.505C7.36243e-07 3.122 0.307001 2.813 0.686001 2.813H6.156C6.17 2.299 6.361 1.778 6.71 1.263C7.23 0.495 8.042 0.074 9.129 0ZM16.106 4.195H3.764V15.822C3.764 17.71 4.284 18.616 5.419 18.616H14.437C15.576 18.616 16.107 17.702 16.107 15.822L16.106 4.195ZM6.716 6.34C7.094 6.34 7.401 6.65 7.401 7.032V15.082C7.4014 15.1725 7.38397 15.2622 7.3497 15.3459C7.31544 15.4296 7.26502 15.5058 7.20132 15.5701C7.13762 15.6343 7.06189 15.6854 6.97844 15.7204C6.895 15.7554 6.80548 15.7736 6.715 15.774C6.53244 15.7729 6.35776 15.6995 6.22933 15.5697C6.10089 15.44 6.0292 15.2646 6.03 15.082V7.032C6.03 6.65 6.338 6.34 6.716 6.34ZM9.442 6.34C9.822 6.34 10.128 6.65 10.128 7.032V15.082C10.1284 15.1725 10.111 15.2622 10.0767 15.3459C10.0424 15.4296 9.99202 15.5058 9.92832 15.5701C9.86462 15.6343 9.78889 15.6854 9.70544 15.7204C9.622 15.7554 9.53248 15.7736 9.442 15.774C9.25944 15.7729 9.08476 15.6995 8.95633 15.5697C8.82789 15.44 8.7562 15.2646 8.757 15.082V7.032C8.757 6.65 9.064 6.34 9.442 6.34ZM12.17 6.34C12.548 6.34 12.855 6.65 12.855 7.032V15.082C12.8558 15.2646 12.7841 15.44 12.6557 15.5697C12.5272 15.6995 12.3526 15.7729 12.17 15.774C12.0795 15.7736 11.99 15.7554 11.9066 15.7204C11.8231 15.6854 11.7474 15.6343 11.6837 15.5701C11.62 15.5058 11.5696 15.4296 11.5353 15.3459C11.501 15.2622 11.4836 15.1725 11.484 15.082V7.032C11.4835 6.84935 11.5554 6.67393 11.684 6.54421C11.8126 6.4145 11.9873 6.34106 12.17 6.34ZM9.176 1.382C8.534 1.427 8.111 1.646 7.842 2.044C7.644 2.335 7.545 2.587 7.529 2.812L12.467 2.811C12.453 2.52 12.338 2.264 12.115 2.019C11.769 1.639 11.385 1.433 11.022 1.384L9.176 1.382Z"/>
-                    </g>
-                    <defs>
-                        <clipPath id="clip0_178_22624">
-                            <rect width="20" height="20" />
-                        </clipPath>
-                    </defs>
-                </svg>`,
-            link: `
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <g clip-path="url(#clip0_179_48976)">
-                  <path d="M9.52533 8.11093C9.26287 7.84843 9.10707 7.49794 9.08804 7.12723C9.06902 6.75652 9.18812 6.39192 9.42233 6.10393L9.52533 5.98993L11.6463 3.86793C12.7549 2.75271 14.257 2.11727 15.8294 2.09834C17.4017 2.0794 18.9187 2.67849 20.0538 3.76669C21.1889 4.85489 21.8515 6.34521 21.8989 7.91697C21.9463 9.48873 21.3748 11.0163 20.3073 12.1709L20.1323 12.3539L18.0103 14.4749C17.7382 14.7458 17.3726 14.902 16.9888 14.9114C16.605 14.9208 16.2322 14.7826 15.9472 14.5254C15.6621 14.2682 15.4866 13.9115 15.4567 13.5287C15.4268 13.146 15.5447 12.7663 15.7863 12.4679L15.8893 12.3539L18.0103 10.2319C18.5574 9.68073 18.8695 8.93884 18.8808 8.16229C18.8922 7.38575 18.6019 6.63506 18.0711 6.06813C17.5403 5.5012 16.8103 5.1622 16.0347 5.12244C15.2591 5.08268 14.4983 5.34525 13.9123 5.85493L13.7683 5.98993L11.6463 8.11093C11.365 8.39214 10.9836 8.55011 10.5858 8.55011C10.1881 8.55011 9.80662 8.39214 9.52533 8.11093ZM8.81833 15.1819C8.55587 14.9194 8.40007 14.5689 8.38104 14.1982C8.36202 13.8275 8.48112 13.4629 8.71533 13.1749L8.81833 13.0609L13.0613 8.81793C13.3331 8.54516 13.6994 8.38736 14.0843 8.3772C14.4692 8.36703 14.8433 8.50528 15.1291 8.76333C15.4149 9.02137 15.5905 9.37944 15.6196 9.7634C15.6487 10.1474 15.529 10.5278 15.2853 10.8259L15.1823 10.9399L10.9393 15.1819C10.658 15.4631 10.2766 15.6211 9.87883 15.6211C9.48109 15.6211 9.09962 15.4631 8.81833 15.1819ZM3.86833 20.1319C2.77428 19.0377 2.14527 17.5631 2.11266 16.0161C2.08005 14.4691 2.64637 12.9693 3.69333 11.8299L3.86833 11.6459L5.99033 9.52593C6.26243 9.25508 6.62803 9.09887 7.01185 9.08947C7.39566 9.08008 7.76847 9.21821 8.05349 9.47543C8.33852 9.73264 8.51407 10.0894 8.54399 10.4721C8.57391 10.8549 8.45593 11.2345 8.21433 11.5329L8.11133 11.6469L5.99033 13.7669C5.43995 14.3174 5.12511 15.0603 5.1123 15.8386C5.09949 16.617 5.38972 17.3698 5.92169 17.9381C6.45366 18.5064 7.1857 18.8457 7.96318 18.8843C8.74067 18.9229 9.50271 18.6578 10.0883 18.1449L10.2323 18.0099L12.3543 15.8899C12.6264 15.6191 12.992 15.4629 13.3758 15.4535C13.7597 15.4441 14.1325 15.5822 14.4175 15.8394C14.7025 16.0966 14.8781 16.4534 14.908 16.8361C14.9379 17.2189 14.8199 17.5985 14.5783 17.8969L14.4753 18.0099L12.3543 20.1319C11.7972 20.6892 11.1357 21.1312 10.4077 21.4328C9.67965 21.7344 8.89935 21.8896 8.11133 21.8896C7.32332 21.8896 6.54302 21.7344 5.815 21.4328C5.08698 21.1312 4.4255 20.6892 3.86833 20.1319Z" />
-                </g>
-                <defs>
-                  <clipPath id="clip0_179_48976">
-                    <rect width="24" height="24" fill="white" transform="matrix(0 -1 1 0 0 24)"/>
-                  </clipPath>
-                </defs>
-              </svg>`,
-        }
+
 
         myWishlistContent = $('#my-wishlist-content');
         const myWishlistMmodal = $('#my-wishlist-modal');
         const mainContent = $('#MainContent');
-    
-        const productColumnSticky = document.querySelector('.product')
-    
-        const btnWishlistSave = document.getElementById('btn-wishlist-save');
-   
-        const btnCloseCapsule =  $('#btn-close-capsule')[0];
-        const capsuleModal = $('#capsule-modal');
-        const btnCapsuleSave = document.getElementById('btn-capsule-save');
-    
-        const wishlistModal = document.getElementById('wishlist-modal');
-        const addWishlistModal = document.getElementById('add-wishlist-modal');
-        const btnCloseModal = $('#btn-close-modal')[0];
-        const closeAddWishlist = $('#close-add-wishlist')[0];
-   
-        const cCapsule = document.querySelector('#capsule-container')        
-        const dropCapsule = cCapsule.querySelector('.dropbtn');
-        var dcCapsule = cCapsule.querySelector('.dropdown-content');
-      
-        dropCapsule.addEventListener('click', function (event) {
-          dcCapsule.style.display = (dcCapsule.style.display === 'block') ? 'none' : 'block';
-        });
-
-        const notifModal = document.querySelector("#notification");
-        if(notifModal) {
-            notifModal.querySelector('#btn-close').addEventListener('click', function (event) {
-                notifModal.remove();
-            });
-        }
-      
-        dcCapsule.addEventListener('click', function (event) {
-            if (event.target.tagName === 'A') {
-                var optionText = event.target.textContent;
-                dropCapsule.querySelector('span').textContent = optionText;
-                dcCapsule.style.display = 'none';
-            }else if (event.target.tagName === 'DIV') {
-                capsuleModal.css({'display': 'block'});
-            }
-
-            if (!event.target.matches('.dropbtn')) {
-                dcCapsule.style.display = 'none';
-
-            }
-        });
-
-        const cWishlist = document.querySelector('#wishlist-container');
-        const dropWishlist = cWishlist.querySelector('.dropbtn');
-        var dcWishlist = cWishlist.querySelector('.dropdown-content');
-      
-        dropWishlist.addEventListener('click', function (event) {
-          dcWishlist.style.display = (dcWishlist.style.display === 'block') ? 'none' : 'block';
-        });
-      
-        dcWishlist.addEventListener('click', function (event) {
-            if (event.target.tagName === 'A') {
-                var optionText = event.target.textContent;
-                var dataId = event.target.getAttribute('data-id');
-                document.getElementById('wishlistId').value = dataId ? dataId : "";
-                dropWishlist.querySelector('span').textContent = optionText;
-                dcWishlist.style.display = 'none';
-            }else if (event.target.tagName === 'DIV') {
-                //addWishlistModal.css({'display': 'block'});
-                addWishlistModal.style.display = 'block';
-            }
-
-            if (!event.target.matches('.dropbtn')) {
-                dcWishlist.style.display = 'none';
-
-            }
-        });
-
-        closeAddWishlist.addEventListener('click', closeAddNewWishlist);
-        btnCloseCapsule.addEventListener('click', closeAddNewCapsule);
-        btnCloseModal.addEventListener('click', closeModal);
-
-        btnWishlistSave.addEventListener('click', function () {
-            var txtWishlist = document.getElementById("txtWishlist");
-            if (txtWishlist.value.trim()) {
-                dropWishlist.querySelector('span').textContent = txtWishlist.value.trim();
-                injectDropdown('wishlist', txtWishlist.value.trim())
-                closeAddNewWishlist()
-            }else{
-                txtWishlist.classList.add("warning");
-            }           
-        });
-    
-        btnCapsuleSave.addEventListener('click', function () {
-            var txtCapsule = document.getElementById("txtCapsule");
-            if (txtCapsule.value.trim()) {
-                dropCapsule.querySelector('span').textContent = txtCapsule.value.trim();
-                injectDropdown('capsule', txtCapsule.value.trim())
-                closeAddNewCapsule()
-            }else{
-                txtCapsule.classList.add("warning");
-            }
-        });
-    
     
         const utilityBar = $('.utility-bar__grid');
     
@@ -222,22 +730,7 @@
             getStore(shopName, shopEmail);
         }
     
-         // inject wistlist item
-         const wishlistData = getLocalStorage('wishlist');
-        if(wishlistData) {
-            const tmp = wishlistData.map(item => ({ _id: item._id, name: item.name }));
-            tmp.forEach((e) => {
-                if(e.name !== "") injectDropdown('wishlist', e)
-            })
-        }
-        // inject capsule item
-        if(getCookie('capsule-unique-names')) { 
-            let res = getCookie('capsule-unique-names');
-            if(res) res = JSON.parse(res);
-            res.forEach((e) => {
-                if(e !== "") injectDropdown('capsule', e);
-            })
-        }
+        const wishlistData = getLocalStorage('wishlist');
     
         // Event listener for my-account-menu click
         $('#my-account-menu').on('click', function () {
@@ -250,24 +743,27 @@
             parent.append(menuItem);
         }
         
-        async function injectDropdown(parent,text) {
+        async function injectDropdown(parent,text) { // for dropdown wishlist form
             const container = document.getElementById(`${parent}-container`)
-            const a = document.createElement("A");
-            if(parent === "wishlist") {
-                if(text?._id) {
-                    a.textContent = text.name;
-                    a.setAttribute("data-id", text._id);
+                if(container) {
+                const a = document.createElement("A");
+                if(parent === "wishlist") {
+                    if(text?._id) {
+                        a.textContent = text.name;
+                        a.setAttribute("data-id", text._id);
+                    }else{
+                        a.textContent = text;
+                    }
+
                 }else{
                     a.textContent = text;
+
                 }
-
-            }else{
-                a.textContent = text;
-
+                const content = container.querySelector('.dropdown-content')
+                content.insertBefore(a, content.firstChild);
             }
-            const content = container.querySelector('.dropdown-content')
-            content.insertBefore(a, content.firstChild);
         }
+
         async function resetDropdown(parent) {
             const container = document.getElementById(`${parent}-container`)
             const content = container.querySelector('.dropdown-content')
@@ -279,109 +775,405 @@
             }
         }
         
-        const wishlistForm = $(`<div id="new-wishlist-modal" class="modal wishlist-modal" style="display: none;">
-            <div id="wishlist-modal-dialog">
-                <div class="flex">
-                    {% if product.images.size > 0 %}
-                    <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
-                    {% endif %}
-                    <div class="block px-3 relative w-full">
-                        <h4 class="h4 m-0 w-90">
-                            {{ product.title | escape }}
-                        </h4>
-                        <p class="m-0">Size</p>
-                        <select name="size" id="size" class="bg-none">
-                            {%- for p in product.variants -%}
-                            <option value="{{ p.title }}" data-variant-id="{{ p.id }}">{{ p.title }}</option>
-                            {%- endfor -%}
-                        </select>
-                        <div id="close-wishlist-form" class="top-0 right-0 absolute cursor-pointer">
+        const createAddForm = (isWishlist=true) => {
+            const modal = $(`
+                <div class="modal" style="display: block">
+                    <div class="modal-content p-5 modal-center m-auto" style="width: 430px">
+                        <div class="modal-body">
+                            <div class="block relative">
+                                <h4 class="h4 m-0 w-90 title font-bold">
+                                    Add a New ${isWishlist ? "Wishlist" : "Capsule" } 
+                                </h4>
+                                <div class="top-0 right-0 absolute cursor-pointer btn-close">
+                                    {% include icon_close %}
+                                </div>
+                            </div>
+                            <div class="mt-5">
+                                <label>${isWishlist ? "Wishlist" : "Capsule" }  Name</label>
+                                <input type="text" class="mt-3 px-2 w-full" placeHolder="Enter ${isWishlist ? "wishlist" : "capsule" }  name...">
+                                <button id="btn-wishlist-save" class="mt-8 p-3 btn-black text-white p-2">SAVE</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-        
-                <p>Add to Wishlist</p>
-                <div class="flex mt-3">
-                    <div class="bullet rounded-full">
-                        <div class="text-center w-full">
-                            <span class="text-center w-full">WL</span>
+                </div>`);
+            return modal;
+        }
+
+        const createWishlistForm = () => {
+            const wishlistData = getLocalStorage('wishlist');
+            const capsuleName = getLocalStorage('capsule-unique-names');
+            const modal = $(`<div class="modal wishlist-modal" style="display: block">
+                <div id="wishlist-modal-dialog">
+                    <div class="flex">
+                        {% if product.images.size > 0 %}
+                        <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+                        {% endif %}
+                        <div class="block px-3 relative w-full">
+                            <h4 class="h4 m-0 w-90">
+                                {{ product.title | escape }}
+                            </h4>
+                            <p class="m-0">Size</p>
+                            <select name="size" id="size" class="bg-none">
+                            </select>
+                            <div class="btn-close top-0 right-0 absolute cursor-pointer">{% include icon_close %}</div>
                         </div>
                     </div>
-                    <div class="ml-3 w-full flex flex-wrap align-center">
-                        <div class="select-botton-container w-full relative">
-                            <div id="wishlist-container" class="dropdown w-full">
-                                <button class="dropbtn drop-wishlist bg-none no-border text-left">
-                                    <label>Wishlist</label>
-                                    <div class="chevron">
-                                        <!--
-                                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
-                                            <path
-                                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
-                                        </svg>
-                                    -->
-                                    </div>
-                                    <span>No wishlist selected</span>                            
-                                </button>
-                                <input type="hidden" id="wishlistId" value="">
-                                <div class="dropdown-content w-full">
-                                    <div class="p-5">
-                                      <div class="btn-create-new cursor-pointer">CREATE NEW WISHLIST</div>
+            
+                    <p>Add to Wishlist</p>
+                    <div class="flex mt-3">
+                        <div class="bullet rounded-full">
+                            <div class="text-center w-full">
+                                <span class="text-center w-full">WL</span>
+                            </div>
+                        </div>
+                        <div class="ml-3 w-full flex flex-wrap align-center">
+                            <div class="select-botton-container w-full relative">
+                                <div id="wishlist-container" class="dropdown w-full">
+                                    <button class="dropbtn drop-wishlist bg-none no-border text-left">
+                                        <label>Wishlist</label>
+                                        <div class="chevron">${icons.chevronUp}</div>
+                                        <span>No wishlist selected</span>                            
+                                    </button>
+                                    <input type="hidden" id="wishlistId" value="">
+                                    <div class="dropdown-content w-full">
+                                        ${wishlistData.map(item => `<a data-id="${item._id}">${item.name}</a>`).join('')}
+                                        <div class="p-5">
+                                          <div class="btn-create-new cursor-pointer">CREATE NEW WISHLIST</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
-        
-                <div class="flex mt-3">
-                    <div class="bullet rounded-full">
-                        <div class="text-center w-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 448 512" style="fill: #fff">
-                                <path
-                                    d="M0 80V229.5c0 17 6.7 33.3 18.7 45.3l176 176c25 25 65.5 25 90.5 0L418.7 317.3c25-25 25-65.5 0-90.5l-176-176c-12-12-28.3-18.7-45.3-18.7H48C21.5 32 0 53.5 0 80zm112 32a32 32 0 1 1 0 64 32 32 0 1 1 0-64z" />
-                                </svg>
+            
+                    <div class="flex mt-3">
+                        <div class="bullet rounded-full">
+                            <div class="text-center w-full flex">${icons.tag}
+                            </div>
                         </div>
-                    </div>
-                    <div class="ml-3 w-full flex flex-wrap align-center">
-                        <div class="select-botton-container w-full relative">
-                            <div id="capsule-container" class="dropdown w-full">
-                                <button class="dropbtn drop-capsule bg-none no-border text-left">
-                                    <label>Capsule</label>
-                                    <div class="chevron">
-                                        <svg class="chevron-down" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 512 512">
-                                            <path
-                                                d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z" />
-                                        </svg>
-                                    </div>
-                                    <span>No capsule selected</span>                            
-                                </button>
-                                <div class="dropdown-content dropdown-content-capsule w-full">
-                                    <div class="p-5">
-                                      <div class="btn-create-new cursor-pointer">CREATE NEW CAPSULE</div>
+                        <div class="ml-3 w-full flex flex-wrap align-center">
+                            <div class="select-botton-container w-full relative">
+                                <div id="capsule-container" class="dropdown w-full">
+                                    <button class="dropbtn drop-capsule bg-none no-border text-left">
+                                        <label>Capsule</label>
+                                        <div class="chevron">${icons.chevronUp}</div>
+                                        <span>No capsule selected</span>                            
+                                    </button>
+                                    <div class="dropdown-content dropdown-content-capsule w-full">
+                                        ${capsuleName.filter(item => item.trim() !== '' && item.trim() !== 'Uncategorized' ).map(item => `<a>${item}</a>`).join('')}
+                                        <div class="p-5">
+                                          <div class="btn-create-new cursor-pointer">CREATE NEW CAPSULE</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    <p class="m-0 mt-8">Add a Comment</p>
+                    <input type="text" id="txtComment" class="h64px w-full" name="txtComment">
+                    <div class="submit-comment">
+                        <button id="btn-create-wishlist" class="mt-8 text-white p-2">ADD TO WISHLIST</button>
+                    </div>
+                    
                 </div>
-                <p class="m-0 mt-8">Add a Comment</p>
-                <input type="text" id="txtComment" class="h64px w-full" name="txtComment">
-                <button id="btn-create-wishlist" class="mt-8 text-white p-2">ADD TO WISHLIST</button>
-                <div id="loader" class="loader"></div>
-            </div>
-        </div>`);
-        
+            </div>`)
+
+            return modal;
+        }
+
         const openWishlistForm = () => {
-            $("body").append(wishlistForm)
-            $("#close-wishlist-form").html($(icons.close))
-            wishlistForm.show();
-            //addBodyStyling();
-            {% comment %} mainContent.css({
-                position: 'relative',
-                zIndex: -1
-            }); {% endcomment %}
-          }
-    
+            const cwf = createWishlistForm().appendTo('body');
+            cwf.find('.btn-close').on('click', () => cwf.remove());
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('variant')) {
+                const variantDetail = variants.find(e => e.id === params.get('variant'))
+                if(variantDetail) {
+                    productSize = variantDetail.title;
+                    productVariant = variantDetail.id;    
+                }
+            }
+            
+            cwf.find("#size").empty();
+            variants.forEach(function (variant) {
+                const option = document.createElement("option");
+                option.value = variant.title;
+                option.text = variant.title;
+                option.setAttribute("data-variant-id", variant.id);
+
+                if (variant.id === productVariant) option.selected = true;
+                cwf.find("#size").append(option);
+            });
+
+            cwf.find("#size").on('change', function () {
+                const productSize = $(this).val();
+                const productVariant = $(this).find(':selected').data('variant-id');
+                console.log("info =>",{
+                    productSize: productSize,
+                    productVariant: productVariant
+                })
+
+            })
+
+            const cWishlist = cwf.find('#wishlist-container');
+            const dropWishlist = cWishlist.find('.dropbtn');
+            const dcWishlist = cWishlist.find('.dropdown-content');
+        
+            const cCapsule = cwf.find('#capsule-container');
+            const dropCapsule = cCapsule.find('.dropbtn');
+            const dcCapsule = cCapsule.find('.dropdown-content');
+
+            dropWishlist.on('click', (event) => {
+                event.stopPropagation();
+                if (dcCapsule.is(':visible')) dcCapsule.hide();
+                dcWishlist.toggle();
+            });
+        
+            dcWishlist.on('click', function (event) {
+                const target = $(event.target);
+                const isAnchor = target.is('a');
+                const isDiv = target.is('div');
+        
+                if (isAnchor) {
+                    const optionText = target.text();
+                    const dataId = target.data('id') || "";
+                    $('#wishlistId').val(dataId);
+                    dropWishlist.find('span').text(optionText);
+                    dcWishlist.hide();
+                } else if (isDiv) {
+                    const awf = createAddForm().appendTo('body');
+                    awf.find('.btn-close').on('click', () => awf.remove());;
+                    awf.find('button').on('click', () => {
+                        const text = awf.find("input[type='text']").first()
+                        if (text.val().trim()) {
+                            dropWishlist.find('span').text(text.val().trim());
+                            cWishlist.find('.dropdown-content').prepend($(`<a>${text.val().trim()}</a>`));
+                            awf.remove()
+                        }else{
+                            text.addClass("warning");
+                        }
+                    })
+                    
+                    //addWishlistModal.style.display = 'block';
+                }
+        
+                if (!target.is('.dropbtn')) dcWishlist.hide();
+            });
+        
+            //dropCapsule.on('click', () => dcCapsule.toggle());
+            dropCapsule.on('click', (event) => {
+                event.stopPropagation();
+                if (dcWishlist.is(':visible')) dcWishlist.hide();
+                dcCapsule.toggle();
+            });
+            // Click event handler for the document
+            $(document).on('click', (event) => {
+                if (dcWishlist.is(':visible')) dcWishlist.hide();
+                if (dcCapsule.is(':visible')) dcCapsule.hide();
+            });
+
+            dcCapsule.on('click', function (event) {
+                const target = $(event.target);
+                const isAnchor = target.is('a');
+                const isDiv = target.is('div');
+        
+                if (isAnchor) {
+                    const optionText = target.text();
+                    dropCapsule.find('span').text(optionText);
+                    dcCapsule.hide();
+                } else if (isDiv) {
+                    const awf = createAddForm(false).appendTo('body');
+                    awf.find('.btn-close').on('click', () => awf.remove());;
+                    awf.find('button').on('click', () => {
+                        const text = awf.find("input[type='text']").first()
+                        if (text.val().trim()) {
+                            dropCapsule.find('span').text(text.val().trim());
+                            cCapsule.find('.dropdown-content').prepend($(`<a>${text.val().trim()}</a>`));
+                            awf.remove()
+                        }else{
+                            text.addClass("warning");
+                        }
+                    })
+
+                }
+        
+                if (!target.is('.dropbtn')) dcCapsule.hide();
+            });
+
+            cwf.find("#btn-create-wishlist").on('click', async function (event) {
+                const wishlistId = getElementValue("wishlistId");
+                let productPriceCurrency = "";
+                const priceItemElement = document.querySelector('.price-item');
+                if (priceItemElement && priceItemElement.outerText)  productPriceCurrency = priceItemElement.outerText.trim();
+                if(productSize === "Default Title") productSize = "--"
+                const productSku ="";
+        
+                const comments = cwf.find("#txtComment").val();
+        
+                const name = dropWishlist.find('span').text() === "No wishlist selected" ? "" : dropWishlist.find('span').text();
+                const capsuleName = dropCapsule.find('span').text() === "No capsule selected" ? "" : dropCapsule.find('span').text(); 
+                console.log("wlwlw =>",{
+                    name: name,
+                    capsuleName: capsuleName,
+                })
+
+                const obj = {
+                    store : store,
+                    name,
+                    products: [{
+                        productId : `{{ product.id }}`,
+                        productName: `{{ product.title }}`,
+                        productPrice: `{{ product.price }}`,
+                        productImage: `https:{{ product.images[0] | img_url: 'master' }}`,
+                        productUrl: `{{ product.url }}`,
+                        productPriceCurrency,
+                        productSku,
+                        productVariant,
+                        productSize,
+                        capsule: {
+                            name: capsuleName
+                        }
+                    }],
+                    comments: comments ? [{
+                        comment: comments,
+                        commentedBy: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    }] : undefined,
+                    createdBy: {
+                        first_name,
+                        last_name,
+                        email,
+                        userId
+                    },
+                    lastAdded: {
+                        by: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    },
+                    lastUpdated: {
+                        by: {
+                            first_name,
+                            last_name,
+                            email,
+                            userId
+                        }
+                    }
+                };
+
+                const requestOptions = {
+                    method: 'POST',
+                    body: JSON.stringify(obj),
+                    redirect: 'follow'
+                };
+                try {
+                    let isTrue = 0;
+                    if (obj.name === "") {
+                        cWishlist.addClass("warning");
+                        isTrue++
+                    } else {
+                        cWishlist.removeClass("warning");
+                    }
+
+                    if (isTrue > 0) return;
+                    cwf.find(".submit-comment button").css({display: "none"})
+                    loader = await renderLoader('0');
+                    cwf.find(".submit-comment").append(loader);
+
+                    let response;
+                    if(wishlistId){
+                        let productObj = obj;
+                        delete productObj.comments;
+                        productObj.products[0].comments = comments ? [{
+                            comment: comments,
+                            commentedBy: {
+                                first_name,
+                                last_name,
+                                email,
+                                userId
+                            }
+                        }] : undefined;
+        
+                        const productData = {
+                            method: 'POST',
+                            // headers: myHeaders,
+                            body: JSON.stringify(productObj),
+                            redirect: 'follow'
+                        };
+                        response = await fetch(appUrl + "/wishlist/"+wishlistId+"/product", productData);
+                    }else{
+                        response = await fetch(appUrl + "/wishlist", requestOptions);
+                    }
+        
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    
+                    const result = await response.json();
+        
+                    //start reload cookie
+                    getWishlist(userId, store);
+                    getProductCapsules(userId, store);
+                    //end reload cookie
+        
+                    const notif = createNotification(`
+                        <div class="flex">
+                            {% if product.images.size > 0 %}
+                            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
+                            {% endif %}
+                            <div class="block px-3 relative w-full">
+                                <p>
+                                    <span class="font-bold">
+                                        {{ product.title | escape }}
+                                    </span>
+                                    <span id="sizeAdd" class="font-bold"> - Size : ${productSize}</span>
+                                    has been added to<span id="wishlistAdd" class="font-bold"> ${name}</span> successfully
+                                </p>
+                            </div>
+                        </div>`
+                    )
+
+                    await Promise.all([
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                cwf.find(".submit-comment button").css({display: "block"})
+                                loader.remove();
+                                deleteCookie("wishlistId");
+                            }, 2000);
+                        }),
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                cwf.remove();
+                                $('body').append(notif);
+                                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
+                                notif.find('#btn-close').on('click', function () {
+                                    notif.remove();
+                                    resolve();
+                                })
+                            }, 2000);
+                        }),
+                        new Promise(resolve => {
+                            setTimeout(() => {
+                                notif.remove();
+                                resolve();
+                            }, 3000);
+                        })
+                    ]);                     
+                    
+                    
+                } catch (error) {
+                    console.error('Error creating wishlist:', error);
+                }
+
+            })
+            
+        };
+        
         async function getStore(name, email) {
             try {
                 const requestOptions = {
@@ -425,8 +1217,8 @@
                         }
                     }
     
-                    wishlistButton.on('click', customerId === '' ? redirectToLogin : showModal);
-                    {% comment %} wishlistButton.on('click', customerId === '' ? redirectToLogin : openWishlistForm); {% endcomment %}
+                    //wishlistButton.on('click', customerId === '' ? redirectToLogin : showModal); 
+                    wishlistButton.on('click', customerId === '' ? redirectToLogin : openWishlistForm);
                     
     
                     const headerIcons = document.querySelector('.header__icons');
@@ -470,67 +1262,6 @@
             }
         }
     
-        async function getWishlist(userId, store) {
-            try {
-                const requestOptions = {
-                    "url": `${appUrl}/wishlist?userId=${userId}&store=${store}&page=1&limit=30&sort[key]=Created+Date&sort[direction]=desc`,
-                    "method": "GET",
-                    "timeout": 0,
-                };
-    
-                return new Promise((resolve, reject) => {
-                    $.ajax(requestOptions)
-                        .done(function (response) {
-                            const res = response.data.items;
-                            if (res) {
-                                const simplifiedWishlist = res.map(item => ({
-                                    _id: item._id,
-                                    store: item.store,
-                                    name: item.name,
-                                    products: item.products.map(product => ({
-                                        _id: product._id,
-                                        productId: product.productId,
-                                        productName: product.productName,
-                                        productPrice: product.productPrice,
-                                        productSize: product.productSize,
-                                        productPriceCurrency :  product.productPriceCurrency ? product.productPriceCurrency : "",
-                                        productVariant: product.productVariant,
-                                        productImage: removeQueryString(product.productImage),
-                                        capsule: product.capsule && product.capsule.name ? product.capsule.name : "Uncategorized"
-                                    })),
-                                    comments: item.comments.map(comment => ({
-                                        comment: comment.comment,
-                                        createdAt: comment.createdAt,
-                                        commentedBy: {
-                                            first_name: comment.commentedBy.first_name,
-                                            last_name: comment.commentedBy.last_name,
-                                            email: comment.commentedBy.email,
-                                            userId: comment.commentedBy.userId,
-                                        }
-                                    })), 
-                                }));
-                                setLocalStorage('wishlist', simplifiedWishlist);
-
-                                resetDropdown('wishlist')
-                                simplifiedWishlist.forEach((e) => {
-                                    injectDropdown('wishlist', e)
-                                })
-                                resolve(response);
-                            }else{
-                                reject(new Error("No data in the response"));
-                            }
-                        }).fail(function (jqXHR, textStatus, errorThrown) {
-                            // Reject the promise with the error details
-                            reject(new Error(`AJAX request failed: ${textStatus}, ${errorThrown}`));
-                        });
-                });
-    
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        }
-    
         async function getProductCapsules(userId, store) {
             try {
                 const requestOptions = {
@@ -538,286 +1269,123 @@
                     "method": "GET",
                     "timeout": 0,
                 };
-    
-                $.ajax(requestOptions).done(function (response) {
-                    const res = response.data;
-                    const uniqueNames = new Set();
-                    res.forEach(item => {
-                        uniqueNames.add(item.capsule.name);
-                    });
-                    const distinctNames = Array.from(uniqueNames);
-    
-                    setCookie('capsule-unique-names', JSON.stringify(distinctNames), 1);
-                });
+                return new Promise((resolve, reject) => {    
+                    $.ajax(requestOptions)
+                        .done(function (response) {
+                            const res = response.data;
+                            const uniqueNames = new Set();
+                            res.forEach(item => {
+                                uniqueNames.add(item.capsule.name);
+                            });
+                            const distinctNames = Array.from(uniqueNames);
+                            setLocalStorage('capsule-unique-names', distinctNames);
+            
+                            setCookie('capsule-unique-names', JSON.stringify(distinctNames), 1);
+                            resolve({
+                                success: true,
+                                data: response.data, 
+                                uniqueNames: distinctNames
+                            });
+                        }
+                    );
+                })
     
             } catch (error) {
                 console.error('Error:', error);
             }
         }
         if (currentUrl.includes('/account')) {
-            if(userId && storeDomain) getWishlist(userId, storeDomain);
+            if(getLocalStorage('shareLink')) {
+                const shareLink = getLocalStorage('shareLink');
+                let queryParams = `https://${window.location.hostname}/pages/share-wishlist?id=${shareLink.id}`;
+                if(shareLink.product_id) queryParams += `&product_id=${shareLink.product_id}`
+                window.location.href = queryParams;
+                localStorage.removeItem('shareLink');                
+            }else{
+                if(userId && storeDomain) getWishlist(userId, storeDomain);
+            }
         }
 
         if (currentUrl.includes('/products/')) {
 
-            const productTitle = document.querySelector('.product__title');
+            const productTitle = $('.product__title');
 
-            const sizeSelect = document.getElementById('size');
-            sizeSelect.addEventListener('change', function () {
-                const selectedSize = $(this).val();
-                const selectedVariantId = $(this).find(':selected').data('variant-id');
-                console.log("info =>",{
-                    selectedSize: selectedSize,
-                    selectedVariantId: selectedVariantId
-                })
-                document.getElementById('productSize').value = selectedSize
-                document.getElementById('productVariant').value = selectedVariantId
-            });
+            const sizeSelect = $('#size');
     
-            const variants = [];
+            variants = [];
             {% for variant in product.variants %}
               variants.push({id: `{{ variant.id }}`, title: `{{ variant.title }}`});
             {% endfor %}
 
             // Add a change event listener to the radio buttons
-            const variantRadios = document.querySelectorAll('input[name="Size"]');
-            variantRadios.forEach(function (radio) {
-                radio.addEventListener('change', function () {
-                    // Check if the radio button is checked
-                    if (radio.checked) {
-                        // Get the selected variant size value
-                        var selectedVariantSize = radio.value;
-                        var selectedVariant = variants.find(function (variant) {
-                            return variant.title === selectedVariantSize;
-                        });
-                        console.log("selectedVariant =>",selectedVariant)
-
-                        if (selectedVariant) {
-                            var selectedVariantId = selectedVariant.id;
-                            console.log("selectedVariantId :",selectedVariantId)
-                            document.getElementById('productSize').value = selectedVariantSize
-                            document.getElementById('productVariant').value = selectedVariantId
-                            sizeSelect.innerHTML = "";
-                            variants.forEach(function (variant) {
-                                var option = document.createElement("option");
-                                option.value = variant.title;
-                                option.text = variant.title;
-                                option.setAttribute("data-variant-id", variant.id);
-                
-                                // Set the selected attribute based on the value
-                                if (variant.title === selectedVariantSize) {
-                                    option.selected = true;
-                                }
-                
-                                sizeSelect.appendChild(option);
+            document.addEventListener('DOMContentLoaded', function() {
+                const variantRadios = document.querySelectorAll('input[name="Size"]');
+                console.log("variantRadios =>",variantRadios)
+                variantRadios.forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        // Check if the radio button is checked
+                        if (radio.checked) {
+                            // Get the selected variant size value
+                            var selectedVariantSize = radio.value;
+                            var selectedVariant = variants.find(function (variant) {
+                                return variant.title === selectedVariantSize;
                             });
+                            console.log("selectedVariant w =>",selectedVariant)
+
+                            if (selectedVariant) {
+                                var selectedVariantId = selectedVariant.id;
+                                console.log("selectedVariantId :",selectedVariantId)
+                                productSize = selectedVariantSize
+                                productVariant = selectedVariantId
+
+                                document.getElementById('productSize').value = selectedVariantSize
+                                document.getElementById('productVariant').value = selectedVariantId
+                                sizeSelect.innerHTML = "";
+                                variants.forEach(function (variant) {
+                                    var option = document.createElement("option");
+                                    option.value = variant.title;
+                                    option.text = variant.title;
+                                    option.setAttribute("data-variant-id", variant.id);
+                    
+                                    // Set the selected attribute based on the value
+                                    if (variant.title === selectedVariantSize) {
+                                        option.selected = true;
+                                    }
+                    
+                                    sizeSelect.append(option);
+                                });
+                            }
                         }
-                    }
+                    });
                 });
-            });            
+            });
     
             // Create a new div element with the wishlist-form HTML
             const wishlistForm = document.createElement('div');
             wishlistForm.innerHTML = `<div class="wishlist-form"><div id="wishlist-button" class="wishlist-button cursor-pointer"></div></div>`;
     
             // Append the wishlistForm div to the productTitle div
-            if (productTitle) productTitle.appendChild(wishlistForm);
+            if (productTitle) productTitle.append(wishlistForm);
     
-            //if (customerId !== "" && storeDomain !== "" && !getCookie('wishlist')) {
+            //if (customerId !== "" && storeDomain !== "" && !getLocalStorage('wishlist')) {
             if (customerId !== "" && storeDomain !== "") {
-                getWishlist(customerId, storeDomain);
-            }
-            //if (customerId !== "" && storeDomain !== "" && !getCookie('capsule-unique-names')) {
-            if (customerId !== "" && storeDomain !== "") {    
-                getProductCapsules(customerId, storeDomain);
-            }
-    
-            const btnCreateWishlist = document.getElementById('btn-create-wishlist');
-            btnCreateWishlist.addEventListener('click', async function () {
-                const wishlistId = getElementValue("wishlistId");
-                const productId = getElementValue("productId");
-                const productName = getElementValue("productName");
-                const productPrice = getElementValue("productPrice");
-                let productPriceCurrency = "";
-                const priceItemElement = document.querySelector('.price-item');
-                if (priceItemElement && priceItemElement.outerText)  productPriceCurrency = priceItemElement.outerText.trim();
-                const productImage = "https:" + getElementValue("productImage");
-                const productUrl = getElementValue("productUrl");
-                let productSize = getElementValue("productSize");
-                if(productSize === "Default Title") productSize = "--"
-                const productVariant = Number(getElementValue("productVariant"));
-        
-                const comments = getElementValue("txtComment");
-        
-                const name = dropWishlist.querySelector('span').textContent === "No wishlist selected" ? "" : dropWishlist.querySelector('span').textContent;
-                const capsuleName = dropCapsule.querySelector('span').textContent === "No capsule selected" ? "" : dropCapsule.querySelector('span').textContent;   
-        
-                const obj = {
-                    store : storeDomain,
-                    name,
-                    products: [{
-                        productId,
-                        productName,
-                        productPrice,
-                        productPriceCurrency,
-                        productImage,
-                        productUrl,
-                        productVariant,
-                        productSize,
-                        capsule: {
-                            name: capsuleName
-                        }
-                    }],
-                    comments: comments ? [{
-                        comment: comments,
-                        commentedBy: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        }
-                    }] : undefined,
-                    createdBy: {
-                        first_name,
-                        last_name,
-                        email,
-                        userId
-                    },
-                    lastAdded: {
-                        by: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        }
-                    },
-                    lastUpdated: {
-                        by: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        }
-                    }
-                };
-        
-                const myHeaders = new Headers();
-                myHeaders.append("Content-Type", "application/json");
-        
-                const requestOptions = {
-                    method: 'POST',
-                    // headers: myHeaders,
-                    body: JSON.stringify(obj),
-                    redirect: 'follow'
-                };
-        
-                try {
-                    let isTrue = 0;
-                    if (obj.name === "") {
-                        cWishlist.classList.add("warning");
-                        isTrue++
-                    } else {
-                        cWishlist.classList.remove("warning");
-                    }
-
-                    if (isTrue > 0) return;
-        
-                    btnCreateWishlist.style.display = "none";
-                    document.getElementById("loader").style.display = "block"
-        
-                    let response;
-                    if(wishlistId){
-                        let productObj = obj;
-                        delete productObj.comments;
-                        productObj.products[0].comments = comments ? [{
-                            comment: comments,
-                            commentedBy: {
-                                first_name,
-                                last_name,
-                                email,
-                                userId
-                            }
-                        }] : undefined;
-        
-                        const productData = {
-                            method: 'POST',
-                            // headers: myHeaders,
-                            body: JSON.stringify(productObj),
-                            redirect: 'follow'
-                        };
-                        response = await fetch(appUrl + "/wishlist/"+wishlistId+"/product", productData);
-                    }else{
-                        response = await fetch(appUrl + "/wishlist", requestOptions);
-                    }
-        
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-
-                    const result = await response.json();
-        
-                    //start reload cookie
-                    getWishlist(customerId, storeDomain);
-                    getProductCapsules(customerId, storeDomain);
-                    //end reload cookie
-        
-                    const notif = createNotification(`
-                        <div class="flex">
-                            {% if product.images.size > 0 %}
-                            <img src="{{ product.images[0] | img_url: 'master' }}" alt="{{ product.title | escape }}" width="64">
-                            {% endif %}
-                            <div class="block px-3 relative w-full">
-                                <p>
-                                    <span class="font-bold">
-                                        {{ product.title | escape }}
-                                    </span>
-                                    <span id="sizeAdd" class="font-bold"> - Size : ${productSize}</span>
-                                    has been added to
-                                    <span id="wishlistAdd" class="font-bold">
-                                        ${name}
-                                    </span>
-                                    successfully
-                                </p>
-                            </div>
-                        </div>`
-                    )
-
-                    await Promise.all([
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                btnCreateWishlist.style.display = "block";
-                                document.getElementById("loader").style.display = "none";
-                                dropCapsule.querySelector('span').textContent = "No capsule selected";
-                                dropWishlist.querySelector('span').textContent = "No wishlist selected";
-                                document.getElementById('wishlistId').value = "";
-                                deleteCookie("wishlistId");
-                            }, 2000);
-                        }),
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                closeModal();
-                                document.getElementById('txtComment').value = "";
-                                $('body').append(notif);
-                                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
-                                notif.find('#btn-close').on('click', function () {
-                                    notif.remove();
-                                    resolve();
-                                })
-                            }, 1000);
-                        }),
-                        new Promise(resolve => {
-                            setTimeout(() => {
-                                notif.remove();
-                                resolve();
-                            }, 3000);
-                        })
-                    ]); 
-        
-                } catch (error) {
-                    console.error('Error creating wishlist:', error);
+                const gw = await getWishlist(customerId, storeDomain);
+                if(gw && gw.success) {
+                    gw?.simplified.forEach((e) => {
+                        if(e.name !== "") injectDropdown('wishlist', e)
+                    })
                 }
-            });
-        }
+            }
+                //if (customerId !== "" && storeDomain !== "" && !getLocalStorage('capsule-unique-names')) {
+                if (customerId !== "" && storeDomain !== "") {
+                const gpc = await getProductCapsules(customerId, storeDomain);
+                if(gpc && gpc.success) {
+                    gpc?.uniqueNames.forEach((e) => {
+                        if(e.name !== "") injectDropdown('capsule', e)
+                    })
+                }    
+            }
+        } 
     
         function redirectToLogin() {
             openLoginModal();
@@ -875,55 +1443,15 @@
             productColumnSticky.style.zIndex = -1;
         }
     
-        // Function to remove query string from URL
-        function removeQueryString(url) {
-            return url.split('?')[0];
-        }
-
-        function getInitials(str) {
-            var words = str.split(' ');
-            var initials = words.map(function(word) {
-              return word.charAt(0);
-            }).join('');
-    
-            return initials.toUpperCase();
-        }
-    
-        function groupByProperty(items, propertyName) {
-            return items.reduce((result, item) => {
-                const key = item[propertyName];
-                const { [propertyName]: propertyValue, ...rest } = item;
-        
-                if (!result[key]) {
-                    result[key] = [];
-                }
-        
-                result[key].push(rest);
-                return result;
-            }, {});
-        }
         // // -- start wislist list --
         const openWishlistList = () => {
-            //const wishlistData = JSON.parse(getCookie('wishlist'));
+            console.log("openWishlistList")
             const wishlistData = getLocalStorage('wishlist');
             const wishlistList = createWishlistList();
             $('body').append(wishlistList);
 
-            //addBodyStyling();
-            {% comment %} mainContent.css({
-                position: 'relative',
-                zIndex: -1
-            }); {% endcomment %}
-
             const closeWishlistBtn = wishlistList.find('#btn-close-my-wishlist');        
-            closeWishlistBtn.on('click', () => {
-                wishlistList.remove();
-                //delBodyStyling();
-                {% comment %} mainContent.css({
-                    position: 'sticky',
-                    zIndex: 2
-                }); {% endcomment %}
-            });
+            closeWishlistBtn.on('click', () => wishlistList.remove());
         
             const myWishlistContent = wishlistList.find('#my-wishlist-content');
             const myWishlistDetail = wishlistList.find('#my-wishlist-detail');
@@ -944,8 +1472,6 @@
             const dWishlist = cWishlist.find('.dropbtn');
             const dcWishlist = cWishlist.find('.dropdown-content');
         
-            setupDropdownClickEvent(dWishlist, dcWishlist, showWishlistDetail);
-        
             dcWishlist.on('input', '#wishlist-search', function () {
                 const searchText = $(this).val().toLowerCase();
                 filterDropdownContent('.dropdown-content a', searchText);
@@ -956,13 +1482,15 @@
             const dCapsule = cCapsule.find('.dropbtn');
             const dcCapsule = cCapsule.find('.dropdown-content');
         
-            setupDropdownClickEvent(dCapsule, dcCapsule, filterProductsByCapsule);
+
+            setupDropdownClickEvent(dWishlist, dcWishlist, dcCapsule, showWishlistDetail);
+            setupDropdownClickEvent(dCapsule, dcCapsule, dcWishlist, filterProductsByCapsule);
         
             myWishlistContent.on('click', '.wishlist-item .item, .wishlist-item .name', function (event) {
                 const wishlistId = $(this).closest('.wishlist-item').attr('data-id');
                 if(wishlistId) {
-                    const closeProduct = myWishlistDetail.find('.wishlist-item .btn-close');
-                    closeProduct.html(icons.close);
+                    {% comment %} const closeProduct = myWishlistDetail.find('.wishlist-item .btn-close');
+                    closeProduct.html(icons.close); {% endcomment %}
                     myWishlistContent.addClass('hidden');
                     myWishlistDetail.removeClass('hidden');
                     setupDropdownContent(dcWishlist, wishlistData, true);
@@ -977,36 +1505,24 @@
                 await shareWishlist(wishlistId);
             })
 
+            $(document).on('click', (event) => {
+                if (dcWishlist.is(':visible')) dcWishlist.hide();
+                if (dcCapsule.is(':visible')) dcCapsule.hide();
+            });
+
         }
 
-        const createConfirm = (text="") => {
-            const modal = $(`
-                <div id="confirm-modal" class="modal" style="display: block">
-                    <div class="modal-content" style="width: 385px;">
-                      <div class="modal-body p-0 text-center">
-                        <p>${text === "" ? "Are you sure want to remove the item? You cannot undo this step." : text }</p>
-                        <div class="confirm flex gap-4 w-1/2 mx-auto">
-                            <button id="confirm-no" class="p-2">No</button>
-                            <button id="confirm-yes" class="p-2">Yes</button>
-                        </div>
-                      </div>
-                    </div>
-                </div>
-            `);
-            return modal;
-        }
         const createWishlistList = () => {
             const wishlistList = $(`<div id="my-wishlist-modal" class="modal">
                 <div id="modal-dialog" class="my-wishlist-modal p-0">
                     <div class="flex justify-between px-5 bar w-full">
                         <div class="flex align-center">
                             <h2 class="font-bold">My Wishlist</h2>
-                            <div class="profile rounded-full"></div>
+                            <div class="profile rounded-full">${icons.user}</div>
                             <div class="flex">{{ customer.email }}</div>
                         </div>
             
-                        <div id="btn-close-my-wishlist" class="btn-close cursor-pointer flex justify-end align-center">
-                        </div>
+                        <div id="btn-close-my-wishlist" class="btn-close cursor-pointer flex justify-end align-center">{% include icon_close %}</div>
                     </div>
                     <div id="my-wishlist-detail" class="my-wishlist-detail">
                         <div class="flex justify-between w-full sub-heading p-5">
@@ -1019,7 +1535,7 @@
                                             <button class="dropbtn drop-wishlist bg-none no-border text-left">
                                                 <label>Wishlist</label>
                                                 <div class="chevron right-0">
-                                                    ${icons.chevron}
+                                                    ${icons.chevronDown}
                                                 </div>
                                                 <span>Rose Wishlist (13)</span>                            
                                             </button>
@@ -1037,7 +1553,7 @@
                                             <button class="dropbtn drop-capsule bg-none no-border text-left">
                                                 <label>Capsule</label>
                                                 <div class="chevron right-0">
-                                                    ${icons.chevron}
+                                                    ${icons.chevronDown}
                                                 </div>
                                                 <span>Select</span>                            
                                             </button>
@@ -1069,7 +1585,7 @@
                                             Duplicate Wishlist
                                         </a>
                                         <a data-id="Remove Wishlist" class="remove">
-                                            <div class="bullet rounded-full">${icons.drop}</div> 
+                                            <div class="bullet rounded-full">{% include icon_remove %}</div> 
                                             Remove Wishlist 
                                         </a>
                                     </div>
@@ -1077,7 +1593,7 @@
             
                             </div>
                         </div>
-                        <div id="my-wishlist-detail-content" class="p-5">            
+                        <div id="my-wishlist-detail-content" class="p-5 detail-content">
                         </div>
                         <div class="comment">
                             <div class="flex justify-between w-full">
@@ -1085,10 +1601,10 @@
                                     <p class="font-bold">Comments (0)</p>
                                 </div>
                                 <div class="flex justify-end gap-8 flex-wrap align-center icon">
-                                    <div class="flex flex-wrap align-center">
-                                        ${icons.chevron}
+                                    <div class="flex flex-wrap align-center btn-chevron cursor-pointer open-expand">
+                                        ${icons.chevronDown}
                                     </div>
-                                    <div id="expand-comment" class="flex flex-wrap align-center cursor-pointer">
+                                    <div class="flex flex-wrap align-center cursor-pointer expand-comment">
                                         ${icons.expand}
                                     </div>
                                 </div>
@@ -1105,16 +1621,17 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div class="flex w-full">
+                                <div class="flex w-full mb-5">
                                     <div class="input-group w-full">
                                         {% comment %} <input id="wishlistComment" type="text" placeholder="Enter your comment here..."> {% endcomment %}
                                         <textarea id="wishlistComment" placeholder="Enter your comment here..." required class="w-full" ></textarea>
-                                        <div id="loader" class="loader"></div>
-                                        <button disabled id="submitComment" type="button">POST</button>
-                                    </div>                            
+                                        <div class="submit-comment">
+                                            <button disabled id="submitComment" type="button">POST</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mt-5">
+                            <div class="mt-5 hidden">
                                 <span class="font-bold">*Enter </span>to Send 
                                 <span class="font-bold">Shift + Enter</span> to Add a New Line 
                             </div>
@@ -1127,28 +1644,9 @@
             </div>
             `);
         
-            wishlistList.find('.profile').html(icons.user);
-            wishlistList.find('#btn-close-my-wishlist').html(icons.close);
-        
+            //wishlistList.find('.profile').html(icons.user);
             return wishlistList;
         };
-        const createNotification = (content) => {
-            const modal = $(`
-                <div id="notification" class="modal" style="display: block">
-                    <div class="modal-content bg-white p-5" style="top: 13%; left: 0; transform: unset; width: 544px; margin: 0; background: #F5F5F5;">
-                        <div class="modal-body">
-                            <div class="block relative">
-                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
-                                    ${icons.close}
-                                </div>
-                            </div>
-                            ${content}
-                        </div>
-                    </div>
-                </div>
-            `);
-            return modal;
-        }
 
         const createDuplicate = (name="") => {
             const modal = $(`
@@ -1159,8 +1657,8 @@
                                 <h4 class="h4 m-0 w-90 title font-bold">
                                     Duplicate Wishlist
                                 </h4>
-                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
-                                    ${icons.close}
+                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer btn-close">
+                                    {% include icon_close %}
                                 </div>
                             </div>
                     
@@ -1188,8 +1686,8 @@
                                 <p class="h4 m-0 w-90 title font-bold">
                                     Share Wishlist Via Email
                                 </p>
-                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer">
-                                    ${icons.close}
+                                <div id="btn-close" class="top-0 right-0 absolute cursor-pointer btn-close">
+                                    {% include icon_close %}
                                 </div>
                             </div>
                     
@@ -1317,14 +1815,15 @@
             `);
         };
         
-        const setupDropdownClickEvent = (dropdown, dropdownContent, callback) => {
-            dropdown.on('click', () => {
-                console.log("dropdown click =>",dropdown)
+        const setupDropdownClickEvent = (dropdown, dropdownContent, dropdownClose, callback) => {
+            dropdown.on('click', (event) => {
+                console.log("setupDropdownClickEvent =>")
+                event.stopPropagation();
+                if (dropdownClose.is(':visible')) dropdownClose.hide();
                 dropdownContent.css('display', dropdownContent.css('display') === 'block' ? 'none' : 'block');
             });
         
             dropdownContent.on('click', (event) => {
-                console.log("dropdownContent event.target =>",event.target)
                 const dataId = event.target.getAttribute('data-id');
                 if (event.target.tagName === 'A') {
                     const optionText = event.target.textContent;
@@ -1351,7 +1850,6 @@
         };
         
         const setupDropdownContent = (dropdownContent, data, isWishlist = false) => {
-            console.log("setupDropdownContent =>",data)
             dropdownContent.html(isWishlist ? `
                 <div class="search">
                     <label>Search Wishlist</label>
@@ -1392,8 +1890,8 @@
             const d = document.createElement('DIV');
             d.classList.add('clear');
             d.innerHTML = `
-                <div data-id="clear-selection" class="flex gap-4 ">
-                    <div class="icon">${icons.close}</div>
+                <div data-id="clear-selection" class="flex gap-4 clear-selection">
+                    <div class="icon">{% include icon_close %}</div>
                     Clear Selection
                 </div>
             `;
@@ -1451,12 +1949,11 @@
                     const commentsCount = wishlistDetail.comments.length > 0 ? wishlistDetail.comments.length : 0
                     myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
                     myWishlistDetail.on('input', '#wishlistComment', function () {
-                        const comment = $(this).val().toLowerCase();
-                        myWishlistDetail.find('#submitComment').prop('disabled', comment.length > 3 ? false : true);
+                        const comment = $(this).val().trim();
+                        myWishlistDetail.find('#submitComment').prop('disabled', comment.length >= 1 ? false : true);
                     });
                 }
             }
-            console.log("wishlistDetail.products =>",wishlistDetail.products)
 
             const groupedData = groupByProperty(wishlistDetail.products, 'capsule');
             const capsuleData = Object.keys(groupedData);
@@ -1491,7 +1988,8 @@
                                     <div class="p-3">
                                         <div class="flex justify-between pb-3 w-full mb-auto">
                                             <div class="btn-close remove-product cursor-pointer ml-auto">
-                                                ${icons.close}
+                                                {% comment %} ${icons.close} {% endcomment %}
+                                                {% include icon_close %}
                                             </div>
                                         </div>
                                 
@@ -1519,53 +2017,49 @@
             }
             $('.wishlist-item .remove-product').on('click', async function (event) {
                 const idProducts = $(this).closest('.wishlist-item').data('id');
-                const confirm = createConfirm();
-                $('body').append(confirm);
+                if(wishlistDetail?.products.length === 1) {
+                    await removeWishlist(wishlistId);
+                }else{
+                    const confirm = createConfirm();
+                    $('body').append(confirm);
 
-                confirm.find("button").on('click', async function (event) {
-                    const buttonId = event.target.id;
-                    confirm.remove();
-                    if (buttonId === 'confirm-yes') {
-                        $("#my-wishlist-detail-content").empty();
-                        const rl = await renderLoader();
-                        $("#my-wishlist-detail-content").append(rl)
+                    confirm.find("button").on('click', async function (event) {
+                        const buttonId = event.target.id;
+                        confirm.remove();
+                        if (buttonId === 'confirm-yes') {
+                            $("#my-wishlist-detail-content").empty();
+                            loader = await renderLoader();
+                            $("#my-wishlist-detail-content").append(loader);
 
-                        const obj = {
-                            store: storeDomain,
-                            idProducts : [idProducts],
+                            const obj = {
+                                store: storeDomain,
+                                idProducts : [idProducts],
+                            }
+
+                            const requestOptions = {
+                                method: 'POST',
+                                body: JSON.stringify(obj),
+                                redirect: 'follow'
+                            };        
+
+                            const response = await fetch(`${appUrl}/wishlist/${wishlistId}/product/delete`, requestOptions);
+                            if (!response.ok) {
+                                throw new Error('Network response was not ok');
+                            }
+            
+                            const gw = await getWishlist(customerId, storeDomain);
+                            if(gw) showWishlistDetail(wishlistId);
                         }
-
-                        const requestOptions = {
-                            method: 'POST',
-                            body: JSON.stringify(obj),
-                            redirect: 'follow'
-                        };        
-
-                        const response = await fetch(`${appUrl}/wishlist/${wishlistId}/product/delete`, requestOptions);
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-        
-                        const gw = await getWishlist(customerId, storeDomain);
-                        if(gw) showWishlistDetail(wishlistId);
-                    }
-                })
+                    })
+                }
             })
 
             $('.wishlist-item .select-size').on('click', async function (event) {                
                 const idProducts = $(this).closest('.wishlist-item').data('product-id');
                 const _id = $(this).closest('.wishlist-item').data('id');
                 $("#my-wishlist-detail-content").empty();
-                const rl = await renderLoader();
-                $("#my-wishlist-detail-content").append(rl);
-
-                async function getProductById(id) {
-                    const handle = (await fetch(`/search/suggest.json?q=id:${id}&resources[type]=product&limit=1`)
-                        .then(response => response.json())
-                        .then(response => response.resources.results.products.shift())).handle;
-                
-                    return await fetch(`/products/${handle}.js`).then(response => response.json());
-                }
+                loader = await renderLoader();
+                $("#my-wishlist-detail-content").append(loader);
                 
                 function capsuleOnClick(selected) {
                     console.log("capsuleOnClick =>",selected)
@@ -1576,7 +2070,8 @@
                     const productDetail = wishlistDetail?.products.find(e => e._id === _id);
                     console.log("productDetail =>",productDetail)
 
-                    const rpd = await renderProductDetail({...product, priceCurrency: productDetail.productPriceCurrency})
+                    const obj = { ...product, priceCurrency: productDetail.productPriceCurrency, productVariant: productDetail.productVariant }
+                    const rpd = await renderProductDetail(obj)
                     if(rpd) {
                         $("#my-wishlist-detail-content").find('.render-loader').remove()
                         $("#my-wishlist-detail-content").append(rpd)
@@ -1606,8 +2101,8 @@
                                 // add loader
                                 dCapsule.css('display', 'none');
                                 //cCapsule.append
-                                const rl = await renderLoader('0');
-                                cCapsule.append(rl)                                
+                                loader = await renderLoader('0');
+                                cCapsule.append(loader);
                                 
                                 const b = {
                                     wishlistId: wishlistId,
@@ -1672,14 +2167,13 @@
                                         }
 
                                         formActions.find('button').css('display','none');
-                                        const rl = await renderLoader('0px');
-                                        formActions.append(rl)
+                                        loader = await renderLoader('0px');
+                                        formActions.append(loader);
         
                                         const atc = await addToCart(items, obj, false);
                                         if(atc && atc.success ) {
                                             window.location.href = "/cart"
-                                        }
-        
+                                        }        
         
                                     }
                                 })                
@@ -1705,28 +2199,30 @@
                 }
             })
 
-            {% comment %} const commentInput = document.getElementById('wishlistComment');
-            const submitButton = document.getElementById('submitComment');
+            const comments = wishlistDetail.comments.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            handlelistComment(true, true, comments);
 
-            commentInput.addEventListener('keydown', function (event) {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                  event.preventDefault(); // Prevent the default Enter behavior (submitting the form)
-                  submitButton.click(); // Simulate a click on the submit button
-                } else if (event.key === 'Enter' && event.shiftKey) {
-                    console.log("event.shiftKey")
-                  // Insert a new line in the textarea
-                  var cursorPos = commentInput.selectionStart;
-                  var textBefore = commentInput.value.substring(0, cursorPos);
-                  var textAfter = commentInput.value.substring(cursorPos);
-                  commentInput.value = textBefore + '\n' + textAfter;
-          
-                  // Move the cursor to the new line
-                  commentInput.selectionStart = cursorPos + 1;
-                  commentInput.selectionEnd = cursorPos + 1;
+            myWishlistDetail.find('.btn-chevron').on('click', function () {
+                const classExpand = $(this).attr('class');
+                let isOpen = true
+                if (classExpand.includes('open-expand')) {
+                    // If "open" class exists, remove it
+                    $(this).removeClass('open-expand');
+                    isOpen = false
+                } else {
+                    // If "open" class does not exist, add it
+                    $(this).addClass('open-expand');
                 }
-            }); {% endcomment %}
+                
+                if(isOpen) myWishlistDetail.find(".comment .btn-chevron").addClass('open-expand')
+                else myWishlistDetail.find(".comment .btn-chevron").removeClass('open-expand')
 
-            $('#expand-comment').on('click', async function () {
+                if (myWishlistDetail.find('.expand-comment').hasClass('open-expand')) myWishlistDetail.find('.expand-comment').click();
+                else handlelistComment(true, isOpen, comments);
+
+            })
+
+            myWishlistDetail.find('.expand-comment').on('click', async function () {
                 const classExpand = $(this).attr('class');
                 let isOpen = true
                 if (classExpand.includes('open-expand')) {
@@ -1738,133 +2234,55 @@
                     $(this).addClass('open-expand');
                 }
 
-                if(isOpen) {
-                    myWishlistDetail.find("#my-wishlist-detail-content").css({display: "none"})
-                    myWishlistDetail.find(".sub-heading").css({display: "none"})
-
-                    if(wishlistDetail && wishlistDetail.comments) {
-                        wishlistDetail.comments.forEach((comment) => {
-                            const rComment = renderComment(comment)
-                            myWishlistDetail.find("#list-comment").prepend(rComment)
-                        })
-                    }
-                }else{
-                    myWishlistDetail.find("#my-wishlist-detail-content").css({display: ""});
-                    myWishlistDetail.find(".sub-heading").css({display: ""})
-                    myWishlistDetail.find("#list-comment").html("")
-                }
-
+                handlelistComment(false, isOpen, comments)
             })
 
-            $('#submitComment').on('click', async function () {
-                const store = `https://{{ shop.domain }}`;
-                const comments = $('#wishlistComment').val();
-                const first_name = `{{ customer.first_name }}`;
-                const last_name = `{{ customer.last_name }}`;
-                const email =  `{{ customer.email }}`;
-                const userId = `{{ customer.id }}`;
-                const obj = {
-                    store,
-                    comments: comments ? [{
-                        comment: comments,
-                        commentedBy: {
-                            first_name,
-                            last_name,
-                            email,
-                            userId
-                        }
-                    }] : undefined,
-                    createdBy: {
-                        first_name,
-                        last_name,
-                        email,
-                        userId
-                    }
-                };
-                console.log("obj =>",obj);
-                console.log("wishlistId =>",wishlistId);
+            myWishlistDetail.find('#submitComment').on('click', async function () {
+                const comments = myWishlistDetail.find('#wishlistComment').val();
+
                 $("#my-wishlist-detail #submitComment").css({display: "none"})
-                $("#my-wishlist-detail #loader").css(
-                    {
-                        display: "block",
-                        margin: "auto",
-                        height: "100%"
-                    }
-                )
-                const myHeaders = new Headers();
-                myHeaders.append("Content-Type", "application/json");
-                const requestOptions = {
-                    method: 'POST',
-                    //headers: myHeaders,
-                    body: JSON.stringify(obj),
-                    redirect: 'follow'
-                };
-                const response = await fetch(appUrl + "/wishlist/"+wishlistId+"/comment", requestOptions);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+                loader = await renderLoader('0');
+                $("#my-wishlist-detail .submit-comment").append(loader);
+                const result = await addComment({comments: comments, wishlistId: wishlistId});
+                console.log("addComment result:",result)
+                if(result?.success) {
+                    await getWishlist(userId, store);
+                    //const notification = createNotification();
+                    setTimeout(() => {
+                        $("#my-wishlist-detail .submit-comment .render-loader").remove()
+                        $("#my-wishlist-detail #submitComment").css({display: ""})
+                        myWishlistDetail.find('#submitComment').prop('disabled', true);
+                        $('#wishlistComment').value = "";
+                        document.querySelector("#wishlistComment").value = "";
+                        const lastComment = result.data.comments.length > 0 ? result.data.comments[result.data.comments.length - 1] : null;
+
+                        const commentsCount = result.data.comments.length > 0 ? result.data.comments.length : 0
+                        myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
+
+                        const newComment = renderComment(lastComment);
+                        myWishlistDetail.find("#list-comment").append(newComment);
+        
+                    }, 3000);
                 }
-
-                getWishlist(userId, store);
-                const result = await response.json();
-
-                //const notification = createNotification();
-
-                setTimeout(() => {
-                    $("#my-wishlist-detail #loader").css({display: ""})
-                    $("#my-wishlist-detail #submitComment").css({display: ""})
-                    myWishlistDetail.find('#submitComment').prop('disabled', true);
-                    $('#wishlistComment').value = "";
-                    document.querySelector("#wishlistComment").value = "";
-                    const lastComment = result.data.comments.length > 0 ? result.data.comments[result.data.comments.length - 1] : null;
-
-                    const commentsCount = result.data.comments.length > 0 ? result.data.comments.length : 0
-                    myWishlistDetail.find('.comments-count P').text(`Comments (${ commentsCount })`);
-
-                    const newComment = renderComment(lastComment);
-                    myWishlistDetail.find("#list-comment").append(newComment);
-    
-                }, 3000);
             });
 
             const dManage = myWishlistDetail.find('.sub-heading .manage-wishlist');
             //const dManage = myWishlistDetail.find('#manage-wishlist');
             const dcManage = dManage.find('.dropdown-content');
             dManage.off('click');
-            dManage.on('click', () => {
+            dManage.on('click', (event) => {
+                event.stopPropagation();
                 dcManage.css('display', dcManage.css('display') === 'block' ? 'none' : 'block');
             });
-            dcManage.on('click', (event) => {
-                console.log("dcManage wkwkw")
+            $(document).on('click', (event) => {
+                if (dcManage.is(':visible')) dcManage.hide();
+            });
+
+            dcManage.off('click');
+            dcManage.on('click', async (event) => {
                 const dataId = event.target.getAttribute('data-id');
                 if(dataId === "Remove Wishlist") {
-                    const confirm = createConfirm();
-                    $('body').append(confirm);
-                    confirm.find("button").off('click');
-                    confirm.find("button").on('click', async function (event) {
-                        const buttonId = event.target.id;                        
-                        confirm.remove();
-                        if (buttonId === 'confirm-yes') {
-                            $("#my-wishlist-detail-content").empty();
-                            const rl = await renderLoader();
-                            $("#my-wishlist-detail-content").append(rl)
-                            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
-                            const requestOptions = {
-                                method: 'POST',
-                                body: JSON.stringify({store: storeDomain}),
-                                redirect: 'follow'
-                            };
-                            const response = await fetch(`${appUrl}/wishlist/${wishlistId}/delete`, requestOptions);
-                            if (!response.ok) {
-                                throw new Error('Network response was not ok');
-                            }
-                            await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
-                            const gw = await getWishlist(customerId, storeDomain);
-                            if(gw) {
-                                $("#my-wishlist-modal").remove();
-                                openWishlistList()
-                            }
-                        }
-                    })
+                    await removeWishlist(wishlistId)                    
                 }else if(dataId === "Duplicate Wishlist") {
                     const name = wishlistDetail?.name
                     const confirm = createDuplicate(name ? name : "");
@@ -1879,9 +2297,15 @@
                     confirm.find("button").on('click', async function (event) {
                         const buttonId = event.target.id;
                         confirm.remove();
+
                         console.log("buttonId =>",buttonId)
 
                         if (buttonId === 'btn-save') {
+                            $("#my-wishlist-detail-content").empty();
+                            loader = await renderLoader();
+                            $("#my-wishlist-detail-content").append(loader);
+                            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+        
                             const first_name = `{{ customer.first_name }}`;
                             const last_name = `{{ customer.last_name }}`;
                             const email =  `{{ customer.email }}`;
@@ -1943,8 +2367,8 @@
                     confirm.remove();
                     if (buttonId === 'confirm-yes') {
                         $("#my-wishlist-detail-content").empty();
-                        const rl = await renderLoader();
-                        $("#my-wishlist-detail-content").append(rl)
+                        loader = await renderLoader();
+                        $("#my-wishlist-detail-content").append(loader);
 
                         const items = wishlistDetail?.products.map(e => ({
                             id: e.productVariant,
@@ -1961,42 +2385,42 @@
                             window.location.href = "/cart"
                         }
 
-                        {% comment %} const formData = {'items': items};
-                           
-                        await fetch(window.Shopify.routes.root + 'cart/add.js', {
-                             method: 'POST',
-                             headers: {
-                               'Content-Type': 'application/json'
-                             },
-                             body: JSON.stringify(formData)
-                        })
-                        .then(async (response) => {
-                            await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
-                            $("#my-wishlist-modal").remove();
-                            const notif = createNotification(`<div class="flex">
-                                <img src="${wishlistDetail.products[0].productImage}" width="64">
-                                <div class="flex flex-wrap align-center px-3 w-full">
-                                    <p>All item on 
-                                        <span class="font-bold">${wishlistDetail.name }</span> has been added to cart successfully.
-                                    </p>
-                                </div>
-                            </div>`)
-                            $('body').append(notif);
-                            notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
-
-                            await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
-                            window.location.href = "/cart"
-                        })
-                        .catch((error) => {
-                            console.error('Error:', error);
-                        }); {% endcomment %}
-
                     }
                 })
             })
         };
         
 
+        const removeWishlist = async(wishlistId) => {
+            const confirm = createConfirm();
+            $('body').append(confirm);
+            confirm.find("button").off('click');
+            confirm.find("button").on('click', async function (event) {
+                const buttonId = event.target.id;                        
+                confirm.remove();
+                if (buttonId === 'confirm-yes') {
+                    $("#my-wishlist-detail-content").empty();
+                    loader = await renderLoader();
+                    $("#my-wishlist-detail-content").append(loader);
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+                    const requestOptions = {
+                        method: 'POST',
+                        body: JSON.stringify({store: storeDomain}),
+                        redirect: 'follow'
+                    };
+                    const response = await fetch(`${appUrl}/wishlist/${wishlistId}/delete`, requestOptions);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1500)); // add delay
+                    const gw = await getWishlist(customerId, storeDomain);
+                    if(gw) {
+                        $("#my-wishlist-modal").remove();
+                        openWishlistList()
+                    }
+                }
+            })
+        }
         const shareWishlist = async(wishlistId) => {
             const wishlistDetail = wishlistData.find((e) => e._id == wishlistId);
             const name = `${first_name} ${last_name}`;
@@ -2098,144 +2522,6 @@
     
         // // --- end wislist list --
 
-        const renderLoader = async(minHeight = "430px") => {
-            const d = document.createElement('DIV');
-            d.classList.add('flex', 'flex-wrap', 'align-center', 'render-loader');
-            d.style.minHeight = minHeight;
-            d.innerHTML = `<div class="loader" style="display: block"></div>`
-            return d;            
-        }
-        const renderProductDetail = async(data) => {
-            console.log("renderProductDetail: ",data)
-            const div = document.createElement('DIV');
-            div.classList.add('flex', 'w-full', 'product-single')
-            div.style.minHeight = '430px';
-            div.innerHTML = `
-            <div class="column-images flex">
-                <div class="product-thumbnails">
-                    ${data?.images.map(image => `<img src="${image}" />`).join('')}
-                </div>
-                <div class="product-images">
-                    <img src="${data?.featured_image}" />
-                </div>        
-            </div>
-            <div class="column-details">
-                <label>Capsule</label>
-                <br />
-                <div class="select-botton-container">
-                  <div class="dropdown">
-                      <button class="dropbtn drop-capsule bg-none no-border text-left">
-                          <div class="chevron right-0">                              
-                              ${icons.chevron}
-                          </div>
-                          <span>Select</span>
-                      </button>
-                      <div class="dropdown-content w-full" style="display: none;">
-                      </div>
-                  </div>
-                </div>
-                <h1 class="product-title">${data?.title}</h1> 
-                <div> 
-                    <p class="product-vendor m-0">${data?.vendor}</p>
-                </div>
-                <p class="price"><span>${data.priceCurrency !== "" ? data.priceCurrency : data?.price}</span></p>
-                <div class="product-form">
-                    <div class="select-size">
-                        Select Size:
-                    </div>
-                    <div class="product-form-item-inner">
-                        <fieldset class="single-option-radio" name="size" id="ProductSelect-option-1" style="display: block;">
-                            ${data?.variants.map((variant, index) => `<input
-                                type="radio" ${index === 0 ? 'checked="checked"' : ''}  value="${variant?.id}" name="size" class="single-option-selector"
-                                id="ProductSelect-option-size-${index}" data-variant-id="${variant?.id}"> 
-                                <label for="ProductSelect-option-size-${index}" ><span>${variant?.title}</span></label>`).join('')}
-                        </fieldset>
-                    </div>
-                    <div class="form-actions">
-                        <button type="submit" name="add" class="addtocart btn product-button">
-                            <span>ADD TO CART</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="product-description">
-                    <p>${data?.description}.</p>
-                </div>
-                <div class="collapsible flex justify-between" data-content-id="collapsContent1" data-button-id="btnCollaps1">
-                    <div>PRODUCT DETAILS</div>
-                    <button class="btn-collaps">+</button>
-                </div>
-                <div class="collaps-content" id="collapsContent1">
-                    <p></p>        
-                </div>
-        
-                <div class="collapsible" data-content-id="collapsContent2" data-button-id="btnCollaps2">
-                    <div>SHIPPING & RETURNS</div>
-                    <button class="btn-collaps">+</button>
-                </div>
-                <div class="collaps-content" id="collapsContent2">
-                    <p></p>
-                </div>
-
-            </div>
-            `;
-            return div;
-        }
-        const renderComment = (data) => {
-            const fullName = `${data.commentedBy.first_name} ${data.commentedBy.last_name}`
-            const div = document.createElement('DIV');
-            div.classList.add('flex', 'w-full', 'justify-between', 'gap-8', 'mb-5');
-            div.innerHTML = `
-            <div class="flex justify-between w-full gap-8 mb-5">
-                <div class="flex flex-wrap align-center">
-                    <div class="bullet rounded-full">
-                        <div class="text-center w-full">
-                            <span class="text-center w-full">${getInitials(fullName)}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="flex w-full">
-                    <div class="input-group w-full">
-                        <div class="text">
-                            <label>${fullName}<label>
-                            <p>${data.comment}</p>
-                        </div>
-                        <div class="time">
-                            <p>${timeAgo(data.createdAt)}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            `;
-            return div;
-        };
-
-        function timeAgo(createdAt) {
-            const currentDate = new Date();
-            const createdDate = new Date(createdAt);
-        
-            const timeDifference = currentDate - createdDate;
-            const seconds = Math.floor(timeDifference / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-            const weeks = Math.floor(days / 7);
-            const months = Math.floor(days / 30);
-        
-            if (months > 0) {
-                return months === 1 ? '1 month ago' : `${months} months ago`;
-            } else if (weeks > 0) {
-                return weeks === 1 ? '1 week ago' : `${weeks} weeks ago`;
-            } else if (days > 0) {
-                return days === 1 ? '1 day ago' : `${days} days ago`;
-            } else if (hours > 0) {
-                return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
-            } else if (minutes > 0) {
-                return minutes === 1 ? '1 minute ago' : `${minutes} minutes ago`;
-            } else {
-                return 'Just now';
-            }
-        }
-
         async function updateCapsule(data) {
             try {
                 const productData = {
@@ -2244,7 +2530,7 @@
                     body: JSON.stringify(data.product),
                     redirect: 'follow'
                 };
-                const response = await fetch(localUrl + "/wishlist/"+data?.wishlistId+"/product/update", productData);
+                const response = await fetch(appUrl + "/wishlist/"+data?.wishlistId+"/product/update", productData);
                 if (!response.ok) {
                     return ({success: false });
                 }else{
@@ -2258,339 +2544,7 @@
                 return ({success: false });
             }
         }
-
-        async function addToCart(items, wishlistDetail, isWishlist=true) {
-            const formData = { 'items': items };
-          
-            try {
-              const response = await fetch(window.Shopify.routes.root + 'cart/add.js', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
-              });
-          
-              // Check if the request was successful (status code 2xx)
-              if (response.ok) {
-                await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
-                $("#my-wishlist-modal").remove();
-                const notif = createNotification(`<div class="flex">
-                    <img src="${wishlistDetail.productImage}" width="64">
-                    <div class="flex flex-wrap align-center px-3 w-full">
-                        <p>${isWishlist ? "All items on " : ""}
-                            <span class="font-bold">${wishlistDetail.name}</span> have been added to the cart successfully.
-                        </p>
-                    </div>
-                </div>`);
-                $('body').append(notif);
-                notif.find(".modal-content")[0].classList.add('animate__animated', 'animate__slideInDown');
-          
-                await new Promise(resolve => setTimeout(resolve, 2000)); // add delay
-                notif.remove();
-                return ({success: true });
-              } else {
-                throw new Error('Failed to add items to the cart');
-              }
-            } catch (error) {
-              console.error(error);
-              return ({success: false });
-            }
-        }
-          
-
-        function setLocalStorage(key, value) {
-            localStorage.setItem(key, JSON.stringify(value));
-        }
-
-        function getLocalStorage(key) {
-            const storedValue = localStorage.getItem(key);
-          
-            // Check if the stored value is not null or undefined
-            if (storedValue !== null && storedValue !== undefined) {
-              try {
-                // Try to parse the JSON string
-                return JSON.parse(storedValue);
-              } catch (error) {
-                // Handle parsing error, if any
-                console.error(`Error parsing JSON for key '${key}':`, error);
-              }
-            }
-          
-            // Return null if the value is not available or cannot be parsed
-            return null;
-          }
-        // Function to set a cookie
-        function setCookie(name, value, daysToExpire) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + daysToExpire * 24 * 60 * 60 * 1000);
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-          
-            // Check if the cookie was successfully set
-            const allCookies = document.cookie;
-            const cookieExists = allCookies.includes(`${name}=${value}`);
-          
-            if (cookieExists) {
-              //console.log(`Cookie '${name}' was successfully set.`);
-            } else {
-              console.error(`Failed to set cookie '${name}'.`);
-            }
-        }
-    
-        // Function to get a cookie by name
-        function getCookie(name) {
-            const cookies = document.cookie.split(';');
-            for (const cookie of cookies) {
-                const [cookieName, cookieValue] = cookie.trim().split('=');
-                if (cookieName === name) {
-                    return cookieValue;
-                }
-            }
-            return null;
-        }
-    
-        // Function to delete a cookie by name
-        function deleteCookie(name) {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-        }
-    
-    
-        // //-- start login popup
-        let storeSetting = localStorage.getItem("storeSetting")
-        storeSetting = JSON.parse(storeSetting) ?? null
-    
-        const textColor = storeSetting !== null ? storeSetting?.loginPromptSettings?.color : ""
-        const text = storeSetting !== null ? storeSetting?.loginPromptSettings?.promptText && storeSetting?.loginPromptSettings?.promptText !== "" ? storeSetting?.loginPromptSettings?.promptText : "" : ""
-    
-        const loginFormString = `{%- form 'customer_login', novalidate: 'novalidate' -%}
-        {%- if form.errors -%}
-            {% unless template.name == 'register'  %}
-            <h2 class="form__message" tabindex="-1" autofocus>
-            <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
-            <svg style="width: 20px" aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 13 13">
-                <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
-                <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
-                <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
-                <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
-            </svg>
-            {{ 'templates.contact.form.error_heading' | t }}
-            </h2>
-            {{ form.errors | default_errors }}
-            {% endunless %}
-        {%- endif -%}
-    
-        <div class="modal-field">        
-            <input
-            type="email"
-            name="customer[email]"
-            id="CustomerEmail"
-            autocomplete="email"
-            autocorrect="off"
-            autocapitalize="off"
-            {% if form.errors contains 'form' %}
-                aria-invalid="true"
-            {% endif %}
-            placeholder="{{ 'customer.login_page.email' | t }}"
-            required
-            class="modal-input"
-            >
-        </div>
-    
-        {%- if form.password_needed -%}
-            <div class="modal-field">          
-            <input
-                type="password"
-                value=""
-                name="customer[password]"
-                id="CustomerPassword"
-                autocomplete="current-password"
-                {% if form.errors contains 'form' %}
-                aria-invalid="true"
-                {% endif %}
-                placeholder="{{ 'customer.login_page.password' | t }}"
-                required
-                class="modal-input"
-            >
-            <a href="#recover">FORGOT?</a>
-            </div>
-    
-        {%- endif -%}
-    
-        <button>
-            LOGIN
-        </button>
-        
-        {%- endform -%}`
-    
-        
-        const registerFormString = `{%- form 'create_customer', novalidate: 'novalidate' -%}
-        {%- if form.errors -%}
-            {% unless template.name == 'login'  %}
-            <h2 class="form__message" tabindex="-1" autofocus>
-            <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
-            <svg style="width: 20px" aria-hidden="true" focusable="false" role="presentation" viewBox="0 0 13 13">
-                <circle cx="6.5" cy="6.50049" r="5.5" stroke="white" stroke-width="2"/>
-                <circle cx="6.5" cy="6.5" r="5.5" fill="#EB001B" stroke="#EB001B" stroke-width="0.7"/>
-                <path d="M5.87413 3.52832L5.97439 7.57216H7.02713L7.12739 3.52832H5.87413ZM6.50076 9.66091C6.88091 9.66091 7.18169 9.37267 7.18169 9.00504C7.18169 8.63742 6.88091 8.34917 6.50076 8.34917C6.12061 8.34917 5.81982 8.63742 5.81982 9.00504C5.81982 9.37267 6.12061 9.66091 6.50076 9.66091Z" fill="white"/>
-                <path d="M5.87413 3.17832H5.51535L5.52424 3.537L5.6245 7.58083L5.63296 7.92216H5.97439H7.02713H7.36856L7.37702 7.58083L7.47728 3.537L7.48617 3.17832H7.12739H5.87413ZM6.50076 10.0109C7.06121 10.0109 7.5317 9.57872 7.5317 9.00504C7.5317 8.43137 7.06121 7.99918 6.50076 7.99918C5.94031 7.99918 5.46982 8.43137 5.46982 9.00504C5.46982 9.57872 5.94031 10.0109 6.50076 10.0109Z" fill="white" stroke="#EB001B" stroke-width="0.7">
-            </svg>
-            {{ 'templates.contact.form.error_heading' | t }}
-            </h2>
-            <ul> 
-            {%- for field in form.errors -%}
-                <li>
-                {%- if field == 'form' -%}
-                    {{ form.errors.messages[field] }}
-                {%- else -%}
-                    <a href="#RegisterForm-{{ field }}">
-                    {{ form.errors.translated_fields[field] | capitalize }}
-                    {{ form.errors.messages[field] }}
-                    </a>
-                {%- endif -%}
-                </li>
-            {%- endfor -%}
-            </ul>
-        {% endunless %}
-        {%- endif -%}
-        <div class="modal-field">      
-            <input
-            type="text"
-            name="customer[first_name]"
-            id="RegisterForm-FirstName"
-            {% if form.first_name %}value="{{ form.first_name }}"{% endif %}
-            autocomplete="given-name"
-            placeholder="{{ 'customer.register.first_name' | t }}"
-            class="modal-input"
-            required
-            >
-        </div>
-        <div class="modal-field">
-            <input
-            type="text"
-            name="customer[last_name]"
-            id="RegisterForm-LastName"
-            {% if form.last_name %}value="{{ form.last_name }}"{% endif %}
-            autocomplete="family-name"
-            placeholder="{{ 'customer.register.last_name' | t }}"
-            class="modal-input"
-            required
-            >
-        </div>
-        <div class="modal-field">      
-            <input
-            type="email"
-            name="customer[email]"
-            id="RegisterForm-email"
-            {% if form.email %} value="{{ form.email }}"{% endif %}
-            spellcheck="false"
-            autocapitalize="off"
-            autocomplete="email"
-            aria-required="true"
-            {% if form.errors contains 'email' %}
-                aria-invalid="true"
-                aria-describedby="RegisterForm-email-error"
-            {% endif %}
-            placeholder="{{ 'customer.register.email' | t }}"
-            class="modal-input"
-            required
-            >
-        </div>
-        {%- if form.errors contains 'email' -%}
-            <span id="RegisterForm-email-error" class="form__message">
-            <svg aria-hidden="true" focusable="false" role="presentation">
-                <use href="#icon-error" />
-            </svg>
-            {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}.
-            </span>
-        {%- endif -%}
-        <div class="modal-field">     
-            <input
-            type="password"
-            name="customer[password]"
-            id="RegisterForm-password"
-            aria-required="true"
-            {% if form.errors contains 'password' %}
-                aria-invalid="true"
-                aria-describedby="RegisterForm-password-error"
-            {% endif %}
-            placeholder="{{ 'customer.register.password' | t }}"
-            class="modal-input"
-            required
-            >
-        </div>
-        {%- if form.errors contains 'password' -%}
-            <span id="RegisterForm-password-error" class="form__message">
-            <svg aria-hidden="true" focusable="false" role="presentation">
-                <use href="#icon-error" />
-            </svg>
-            {{ form.errors.translated_fields['password'] | capitalize }} {{ form.errors.messages['password'] }}.
-            </span>
-        {%- endif -%}
-        <button>
-            CREATE ACCOUNT
-        </button>
-        {%- endform -%}
-        `
-    
-        const closeModalButton = $(`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" style=" position: absolute;right: 24px;top: 24px;" id="close-modal">
-        <g clip-path="url(#clip0_172_9624)">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M11.9993 13.4141L17.6563 19.0711C17.8449 19.2533 18.0975 19.3541 18.3597 19.3518C18.6219 19.3495 18.8727 19.2444 19.0582 19.059C19.2436 18.8736 19.3487 18.6227 19.351 18.3606C19.3533 18.0984 19.2525 17.8458 19.0703 17.6571L13.4133 12.0001L19.0703 6.34315C19.2525 6.15455 19.3533 5.90194 19.351 5.63975C19.3487 5.37755 19.2436 5.12674 19.0582 4.94133C18.8727 4.75592 18.6219 4.65075 18.3597 4.64848C18.0975 4.6462 17.8449 4.74699 17.6563 4.92915L11.9993 10.5861L6.34233 4.92915C6.15288 4.75149 5.90175 4.65451 5.64207 4.65873C5.38238 4.66295 5.13453 4.76803 4.95094 4.95174C4.76736 5.13546 4.66245 5.38339 4.65842 5.64307C4.65439 5.90276 4.75155 6.15382 4.92933 6.34315L10.5853 12.0001L4.92833 17.6571C4.83282 17.7494 4.75664 17.8597 4.70423 17.9817C4.65182 18.1037 4.62424 18.235 4.62308 18.3677C4.62193 18.5005 4.64723 18.6322 4.69751 18.7551C4.74779 18.878 4.82205 18.9897 4.91594 19.0835C5.00983 19.1774 5.12148 19.2517 5.24438 19.302C5.36728 19.3523 5.49896 19.3776 5.63174 19.3764C5.76452 19.3752 5.89574 19.3477 6.01774 19.2953C6.13974 19.2428 6.25009 19.1667 6.34233 19.0711L11.9993 13.4141Z" fill="black"/>
-        </g>
-        <defs>
-        <clipPath id="clip0_172_9624">
-        <rect width="24" height="24" fill="white"/>
-        </clipPath>
-        </defs>
-        </svg>`)
-    
-    
-        const loginModal = $(`<div id="login-modal" class="modal" style="display: none;">
-        <div class="login-modal" id="modal-dialog">
-            <div class="modal-header">
-            <h3 style="color: ${textColor}">My Wishlist</h3>
-            <p style="color: ${textColor}">${text !== "" ? text : "My Wishlist allows you to keep track of all of your favorites and shopping activity whether you're on your computer, phone, or tablet. You won't have to waste time searching all over again for that item you loved on your phone the other day - it's all here in one place!<br/>And you must have an account and be logged in to save items to your wishlist."}</p>
-            </div>
-            <div class="modal-body">
-            <div class="auth-items">
-                <div class="auth-item">
-                <h4>LOGIN</h4>
-                ${loginFormString}
-                </div>
-                <div class="auth-item">
-                <h4>CREATE AN ACCOUNT</h4>
-                ${registerFormString}
-                </div>
-            </div>
-            </div>
-        </div>
-        </div>`)
-    
-        
-        const closeLoginModal = () => {
-            loginModal.remove()
-        }
-    
-        const openLoginModal = () => {
-            $("body").append(loginModal);
-            let st = JSON.parse(getCookie("storeSetting"));
-            const textColor = st !== null ? st.loginPromptSettings.color : ""
-            const text = st !== null ? st.loginPromptSettings.promptText && st.loginPromptSettings.promptText !== "" ? st.loginPromptSettings.promptText : "" : ""
-            // force re-new, for new update (localstorage)
-            const modalHeader = loginModal.find('.modal-header')
-            if(modalHeader && text !== "") {
-                modalHeader.html('');
-                const newContent = $(`
-                    <h3 style="color:${textColor}">My Wishlist</h3>
-                    <p style="color:${textColor}">${text}</p>`);
-                modalHeader.append(newContent);
-            }
-            closeModalButton.prependTo(".login-modal#modal-dialog")
-            loginModal.show()
-        }
-        
-        $(document).on('click', '#close-modal', () => loginModal.remove())
-        // //-- end login popup
-
+         
     });   
 
 </script>
