@@ -1,0 +1,214 @@
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script> 
+
+{{ 'https://staging.twixo.io/styles/0.0.1-app.css'  | stylesheet_tag }}
+
+<script>
+  var shopifyStoreState = "077201774494190";
+  var shopifyStoreDomain = `{{ shop.domain }}`;
+  
+  var store = {
+    domain: `https://{{ shop.domain }}`
+  }
+
+  
+  const shopEmail = `{{ shop.email }}`;
+  const shopName = `{{ shop.name }}`
+  
+  var customer = {
+    firstName:  `{{ customer.first_name }}`,
+    lastName:  `{{ customer.last_name }}`,
+    email:  `{{ customer.email }}`,
+    id:  `{{ customer.id }}`,
+  }
+  
+  var product = null;
+  
+  if(window.location.href.indexOf("product") >= 0){
+      var product = {
+          image: {
+              size: `{{ product.images.size }}`,
+              src: {{ product.images | json }},
+              alt: `{{ product.title }}`
+          },
+          featured_image: {
+            src: `{{ product.featured_image.src | img_url: 'large' | absolute_url }}`
+          },
+          article: {{ product.collections | json }},
+          variants: {{ product.variants | json }},
+          inventoryQty: `{{ product.variants.first.inventory_quantity }}`,
+          title: `{{ product.title }}`,
+          price: `{{ product.price }}`,
+          url: `{{ product.url }}`,
+          available: `{{ product.available }}`,
+          id: `{{ product.id }}`
+      }
+  }
+
+  
+  var loginFormString = `{%- form 'customer_login', novalidate: 'novalidate' -%}
+      {%- if form.errors -%}
+          {% unless template.name == 'register'  %}
+          <h2 class="form__message" tabindex="-1" autofocus>
+          <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+          ${icons.error}
+          {{ 'templates.contact.form.error_heading' | t }}
+          </h2>
+          {{ form.errors | default_errors }}
+          {% endunless %}
+      {%- endif -%}
+  
+      <div class="modal-field">        
+          <input
+              type="email"
+              name="customer[email]"
+              id="CustomerEmail"
+              autocomplete="email"
+              autocorrect="off"
+              autocapitalize="off"
+              {% if form.errors contains 'form' %}
+                  aria-invalid="true"
+              {% endif %}
+              placeholder="{{ 'customer.login_page.email' | t }}"
+              required
+              class="modal-input"
+          >
+      </div>
+  
+      {%- if form.password_needed -%}
+          <div class="modal-field">          
+              <input
+                  type="password"
+                  value=""
+                  name="customer[password]"
+                  id="CustomerPassword"
+                  autocomplete="current-password"
+                  {% if form.errors contains 'form' %}
+                  aria-invalid="true"
+                  {% endif %}
+                  placeholder="{{ 'customer.login_page.password' | t }}"
+                  required
+                  class="modal-input"
+              >
+              <a href="#recover">FORGOT?</a>
+          </div>
+  
+      {%- endif -%}
+  
+      <button>
+          LOGIN
+      </button>
+      
+      {%- endform -%}`
+  
+  var registerFormString = `{%- form 'create_customer', novalidate: 'novalidate' -%}
+      {%- if form.errors -%}
+          {% unless template.name == 'login'  %}
+          <h2 class="form__message" tabindex="-1" autofocus>
+          <span class="visually-hidden">{{ 'accessibility.error' | t }} </span>
+          ${icons.error}
+          {{ 'templates.contact.form.error_heading' | t }}
+          </h2>
+          <ul> 
+          {%- for field in form.errors -%}
+              <li>
+              {%- if field == 'form' -%}
+                  {{ form.errors.messages[field] }}
+              {%- else -%}
+                  <a href="#RegisterForm-{{ field }}">
+                  {{ form.errors.translated_fields[field] | capitalize }}
+                  {{ form.errors.messages[field] }}
+                  </a>
+              {%- endif -%}
+              </li>
+          {%- endfor -%}
+          </ul>
+      {% endunless %}
+      {%- endif -%}
+      <div class="modal-field">      
+          <input
+          type="text"
+          name="customer[first_name]"
+          id="RegisterForm-FirstName"
+          {% if form.first_name %}value="{{ form.first_name }}"{% endif %}
+          autocomplete="given-name"
+          placeholder="{{ 'customer.register.first_name' | t }}"
+          class="modal-input"
+          required
+          >
+      </div>
+      <div class="modal-field">
+          <input
+          type="text"
+          name="customer[last_name]"
+          id="RegisterForm-LastName"
+          {% if form.last_name %}value="{{ form.last_name }}"{% endif %}
+          autocomplete="family-name"
+          placeholder="{{ 'customer.register.last_name' | t }}"
+          class="modal-input"
+          required
+          >
+      </div>
+      <div class="modal-field">      
+          <input
+          type="email"
+          name="customer[email]"
+          id="RegisterForm-email"
+          {% if form.email %} value="{{ form.email }}"{% endif %}
+          spellcheck="false"
+          autocapitalize="off"
+          autocomplete="email"
+          aria-required="true"
+          {% if form.errors contains 'email' %}
+              aria-invalid="true"
+              aria-describedby="RegisterForm-email-error"
+          {% endif %}
+          placeholder="{{ 'customer.register.email' | t }}"
+          class="modal-input"
+          required
+          >
+      </div>
+      {%- if form.errors contains 'email' -%}
+          <span id="RegisterForm-email-error" class="form__message">
+          <svg aria-hidden="true" focusable="false" role="presentation">
+              <use href="#icon-error" />
+          </svg>
+          {{ form.errors.translated_fields['email'] | capitalize }} {{ form.errors.messages['email'] }}.
+          </span>
+      {%- endif -%}
+      <div class="modal-field">     
+          <input
+          type="password"
+          name="customer[password]"
+          id="RegisterForm-password"
+          aria-required="true"
+          {% if form.errors contains 'password' %}
+              aria-invalid="true"
+              aria-describedby="RegisterForm-password-error"
+          {% endif %}
+          placeholder="{{ 'customer.register.password' | t }}"
+          class="modal-input"
+          required
+          >
+      </div>
+      {%- if form.errors contains 'password' -%}
+          <span id="RegisterForm-password-error" class="form__message">
+          <svg aria-hidden="true" focusable="false" role="presentation">
+              <use href="#icon-error" />
+          </svg>
+          {{ form.errors.translated_fields['password'] | capitalize }} {{ form.errors.messages['password'] }}.
+          </span>
+      {%- endif -%}
+      <button>
+          CREATE ACCOUNT
+      </button>
+      {%- endform -%}`
+  
+</script>
+
+    <script src="https://staging.twixo.io/scripts/0.0.1-app.js"></script>
+
+    <script>
+      jQuery(document).ready(async function($) {
+        TwixoInit();
+      })
+    </script>
