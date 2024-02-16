@@ -293,9 +293,9 @@
 
             detailContent.find('.addtocart').off('click')
             detailContent.find('.addtocart').on('click', async (event) => {
-
                 
-                let message = "Are you sure want to add all item to cart?"
+                await handleWishlistUpdate(wishlistDetail, [], false)
+                {% comment %} let message = "Are you sure want to add all item to cart?"
                 let divLoader = detailContent.find(".form-actions");
                 let isWishlist=true;
                 let items = wishlistDetail?.products.map(e => ({
@@ -337,7 +337,7 @@
                         }
 
                     }
-                })
+                }) {% endcomment %}
             })
         }
        

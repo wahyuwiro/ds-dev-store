@@ -3,10 +3,13 @@
 {{ 'dsStyle.css' | asset_url | stylesheet_tag }}
 {% assign icon_close = 'icon-close' | append: '.liquid' %}
 {% assign icon_remove = 'icon-remove' | append: '.liquid' %}
+{% assign icon_minus = 'icon-minus' | append: '.liquid' %}
+{% assign icon_plus = 'icon-plus' | append: '.liquid' %}
+
 <script >
     let wishlistActivator, wishlistPopover, capsuleActivator, capsulePopover;
     const appUrl = "http://staging.twixo.io/api/v1";
-    const localUrl = "http://localhost:3000/api/v1";
+    //const appUrl = "http://localhost:3000/api/v1";
     let loader;
     
     const icons = {
@@ -63,7 +66,10 @@
 
     async function getWishlist(userId, store, id="") {
         try {
-            const param = id !== "" ? { param: JSON.stringify({id: id}) } : {};
+            let q = {}
+            if(id !== "") q.id = id;
+            else q.isCheckedout = true
+            const param = { param: JSON.stringify(q) }; 
             const requestOptions = {
                 url: `${appUrl}/wishlist`,
                 method: "GET",
@@ -84,12 +90,15 @@
                 $.ajax(requestOptions)
                     .done(function (response) {
                         const res = response.data.items;
+                        console.log("res =>",res)
                         if (res) {
                             const simplifiedWishlist = res.map(item => ({
                                 _id: item._id,
                                 store: item.store,
                                 name: item.name,
-                                products: item.products.map(product => ({
+                                products: item.products
+                                .filter(product => q.id ? product : product.isCheckedout === true)
+                                .map(product => ({
                                     _id: product._id,
                                     productId: product.productId,
                                     productName: product.productName,
@@ -272,6 +281,36 @@
         return initials.toUpperCase();
     }
 
+    function incrementQuantity(inputId) {
+        var quantityInput = document.getElementById(inputId);
+        var currentQuantity = parseInt(quantityInput.value, 10);
+        
+        // You can add validation if needed
+        currentQuantity = isNaN(currentQuantity) ? 1 : currentQuantity;
+    
+        // Increment the quantity
+        currentQuantity++;
+    
+        // Update the input field with the new quantity
+        quantityInput.value = currentQuantity;
+    }
+    
+    function decrementQuantity(inputId) {
+        var quantityInput = document.getElementById(inputId);
+        var currentQuantity = parseInt(quantityInput.value, 10);
+    
+        // You can add validation if needed
+        currentQuantity = isNaN(currentQuantity) ? 1 : currentQuantity;
+    
+        // Ensure the quantity doesn't go below 1
+        if (currentQuantity > 1) {
+          // Decrement the quantity
+          currentQuantity--;
+    
+          // Update the input field with the new quantity
+          quantityInput.value = currentQuantity;
+        }
+    }
     const renderLoader = async(minHeight = "430px") => {
         const d = document.createElement('DIV');
         d.classList.add('flex', 'flex-wrap', 'align-center', 'render-loader');
@@ -685,6 +724,166 @@
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
     }
 
+    const createAddToCart = (data="") => {
+        const totalPrice = data?.products.reduce((sum, product) => sum + product.productPrice, 0);
+        const modal = $(`
+            <div id="add-to-cart-modal" class="modal add-to-cart-modal" style="display: block">
+                <div class="modal-content p-0" style="width: 655px">
+                    <div class="modal-head p-5">
+                        <div class="block relative">
+                            <h4 class="h4 m-0 w-90 title font-bold">
+                                Shopping Cart
+                            </h4>
+                            <div id="btn-close" class="right-0 absolute cursor-pointer btn-close">
+                                {% include icon_close %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-body p-5">                    
+                        ${data?.products.map((item, index) => `
+                            <div class="flex list justify-between mx-auto mt-5 mb-5">
+                                <div class="image">
+                                    <img src="${item.productImage}" alt="${item.productName}" >
+                                </div>
+                                <div class="block px-3 w-full">
+                                    <p class="m-0 leading-none">
+                                        <span class="font-bold">${item.productName}</span>
+                                    </p>
+                                    <p class="m-0">
+                                        <span class="font-bold size">Size : ${item?.productSize}</span>
+                                    </p>
+                                    <div class="quantity">
+                                        <button class="quantity__button no-js-hidden" name="minus" type="button" onClick="decrementQuantity('quantity${index}')">
+                                          {% include icon_minus %}
+                                        </button>
+                                        <input type="hidden" id="variant${index}" value="${item?.productVariant}">
+                                        <input class="quantity__input" type="number" id="quantity${index}" value="1" readonly>
+                                        <button class="quantity__button no-js-hidden" name="plus" type="button" onClick="incrementQuantity('quantity${index}')">
+                                          {% include icon_plus %}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="px-3 flex justify-end">
+                                    <div>
+                                        <div class="remove bullet rounded-full cursor-pointer">{% include icon_remove %}</div> 
+                                        <div class="price">
+                                            ${item?.productPrice}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="confirm w-full p-5 mt-5">
+                        <div class="flex justify-between w-full">
+                            <div class="flex align-center size font-bold total_item">
+                                ${data?.products.length} Items
+                            </div>
+                            <div class="flex justify-end align-center size">
+                                Sub-total: <span class="font-bold total_price"> ${totalPrice} </span>
+                            </div>
+                        </div>
+
+                        <p class="text-center mb-0">Shipping & Taxes Calculated at Checkout</p> 
+                        <div id="button-checkout" class="w-full mt-8 ">
+                            <button id="btn-proccess" class="py-4 btn-black px-5">PROCEED TO CHECKOUT</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `);
+        return modal;
+    }
+
+    async function handleWishlistUpdate(data, product=[], isFlaging=true) {
+        try {
+            const confirm = createAddToCart(data ? data : "");
+            $('body').append(confirm);
+            
+            confirm.find('#btn-close').on('click', function () {
+                confirm.remove();
+            });
+
+            confirm.find('.remove').on('click', function () {
+                const listItem = $(this).closest('.list');
+                const priceText = listItem.find('.price').text().trim(); // Retrieve the price HTML value and trim spaces
+                const price = parseFloat(priceText.replace(/[^\d.]/g, '')); // Convert to number by removing non-numeric characters
+
+                if (listItem) listItem.remove();
+                const items = confirm.find('.modal-body .list');
+                const totalPriceText = confirm.find('.total_price')[0].innerHTML.trim()
+                const totalPrice = parseFloat(totalPriceText.replace(/[^\d.]/g, ''));
+                confirm.find('.total_item')[0].innerHTML = `${items.length} Items`
+                confirm.find('.total_price')[0].innerHTML = `${totalPrice - price}`
+            })
+
+            confirm.find('#btn-proccess').on('click', async function () {                    
+                const cartData = product;
+                if(cartData?.length === 0) {
+                    data?.products.forEach((item, index) => {
+                        const variantInput = document.getElementById(`variant${index}`);
+                        const quantityInput = document.getElementById(`quantity${index}`);
+
+                        if (variantInput && quantityInput) {
+                            const variantId = parseInt(variantInput.value, 10);
+                            const quantity = parseInt(quantityInput.value, 10);
+
+                            cartData.push({
+                                variant_id: variantId,
+                                quantity: quantity,
+                            });
+
+                        }
+                    });
+                }
+
+                if(cartData.length === 0) return;
+
+                localStorage.removeItem('cartData');
+                const isUpdate = (data?.products?.length === cartData?.length) ? "wishlist" : "product"
+                setLocalStorage('cartData', {
+                    id: data?._id,
+                    ufpdate: isUpdate,
+                    products: cartData
+                })
+
+                confirm.find("#button-checkout").empty();
+                loader = await renderLoader('0');
+                confirm.find("#button-checkout").append(loader);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000)); // add delay
+                const body = {
+                    checkout: {
+                        line_items: cartData,
+                        note: isFlaging ? `wishlist-app:${data?._id}` : "wishlist-app"
+                    }
+                }
+                
+                var myHeaders = new Headers();
+                myHeaders.append("X-Shopify-Access-Token", "shpua_0f9f518a8006aba135ffc58b45ea65b3");
+                myHeaders.append("Content-Type", "application/json");
+
+                const requestOptions = {
+                    method: 'POST',
+                    body: JSON.stringify(body),
+                    headers: myHeaders,
+                    redirect: 'follow'
+                };
+                const response = await fetch(`https://${window.location.hostname}/admin/api/2023-07/checkouts.json`, requestOptions);
+                if (response.ok) {
+                    const result = await response.json();
+                    //return ({success: true, data: result });
+                    if(result?.checkout?.web_url) window.location.href = result?.checkout?.web_url
+                }
+                
+            });                
+
+        } catch (error) {
+            return ({success: false });
+        }
+    }
+
     jQuery(document).ready(async function($) {
         const getElementValue = (id) => document.getElementById(id).value;
 
@@ -1011,10 +1210,6 @@
         
                 const name = dropWishlist.find('span').text() === "No wishlist selected" ? "" : dropWishlist.find('span').text();
                 const capsuleName = dropCapsule.find('span').text() === "No capsule selected" ? "" : dropCapsule.find('span').text(); 
-                console.log("wlwlw =>",{
-                    name: name,
-                    capsuleName: capsuleName,
-                })
 
                 const obj = {
                     store : store,
@@ -1247,7 +1442,7 @@
                         $('#my-wishlist-menu').on('click', function () {
                             {% comment %} if (customerId !== "" && storeDomain !== "" && getCookie('wishlist')) { {% endcomment %}
                             if (customerId !== "" && storeDomain !== "") {
-                                showMyWishlist();
+                                openWishlistList();
                             }else{
                                 redirectToLogin();
                             }
@@ -1294,19 +1489,38 @@
                 console.error('Error:', error);
             }
         }
+
+        function copyLink(data) {
+            // Create a temporary input element
+            var tempInput = document.createElement("input");
+      
+            // Set the value to the data
+            tempInput.value = data;
+      
+            // Append the input element to the body
+            document.body.appendChild(tempInput);
+      
+            // Select the text in the input
+            tempInput.select();
+            document.execCommand("copy");
+      
+            // Remove the temporary input element
+            document.body.removeChild(tempInput);
+        }
+
         if (currentUrl.includes('/account')) {
             if(getLocalStorage('shareLink')) {
                 const shareLink = getLocalStorage('shareLink');
                 let queryParams = `https://${window.location.hostname}/pages/share-wishlist?id=${shareLink.id}`;
                 if(shareLink.product_id) queryParams += `&product_id=${shareLink.product_id}`
                 window.location.href = queryParams;
-                localStorage.removeItem('shareLink');                
+                localStorage.removeItem('shareLink');
             }else{
                 if(userId && storeDomain) getWishlist(userId, storeDomain);
             }
         }
 
-        if (currentUrl.includes('/products/')) {
+        if (currentUrl.includes('/products/')) { 
 
             const productTitle = $('.product__title');
 
@@ -1365,7 +1579,9 @@
             wishlistForm.innerHTML = `<div class="wishlist-form"><div id="wishlist-button" class="wishlist-button cursor-pointer"></div></div>`;
     
             // Append the wishlistForm div to the productTitle div
-            if (productTitle) productTitle.append(wishlistForm);
+            {% if product.available %}
+                if (productTitle) productTitle.append(wishlistForm);
+            {% endif %}
     
             //if (customerId !== "" && storeDomain !== "" && !getLocalStorage('wishlist')) {
             if (customerId !== "" && storeDomain !== "") {
@@ -1444,8 +1660,14 @@
         }
     
         // // -- start wislist list --
-        const openWishlistList = () => {
+        const openWishlistList = async () => {
             console.log("openWishlistList")
+            const cartData = getLocalStorage('cartData');
+            if(cartData) {
+                const gw = await getWishlist(userId, store);
+                if(gw) localStorage.removeItem('cartData'); 
+            }
+
             const wishlistData = getLocalStorage('wishlist');
             const wishlistList = createWishlistList();
             $('body').append(wishlistList);
@@ -1696,8 +1918,8 @@
                                 <input type="text" id="txtSenderr" required class="w-full" value="${name}" />
                             </div>
                             <div class="mt-5">
-                                <label class="px-0 label">Receipent Email Address*</label>
-                                <input type="text" id="txtReceipent" required class="w-full" placeHolder="Enter receipent email address..." />
+                                <label class="px-0 label">Recipient Email Address*</label>
+                                <input type="text" id="txtRecipient" required class="w-full" placeHolder="Enter recipient email address..." />
                             </div>
                             <div class="mt-5">
                                 <label class="px-0 label">Message</label>
@@ -1712,14 +1934,15 @@
                                 <label class="mx-0 label">Or Share Via</label>
                             </div>
                             <div class="w-full flex mt-5 justify-between social-media fill-black">
-                                <div class="flex gap-2 flex-wrap align-center">
+                                <div class="flex gap-2 flex-wrap align-center relative copy-link">
                                     ${icons.link}
                                     <label class="label">COPY LINK</label>
+                                    <div id="copyLinkNotification">Copied!</div>
                                  </div>
-                                <div class="flex gap-2 flex-wrap align-center">
+                                <div class="flex gap-2 flex-wrap align-center share-facebook">
                                     <label class="label">FACEBOOK</label>
                                 </div>
-                                <div class="flex gap-2 flex-wrap align-center">
+                                <div class="flex gap-2 flex-wrap align-center share-twitter">
                                     <label class="label">TWITTER</label>
                                 </div>
                             </div>
@@ -1839,6 +2062,11 @@
                         addWishlistModal.style.display = 'block';
                     }
                 }
+            });
+            
+            // Exclude input field from event propagation
+            dropdownContent.on('click', 'input', (event) => {
+                event.stopPropagation();
             });
         };
         
@@ -2149,7 +2377,23 @@
                             const selectedSize = $(".single-option-radio input[name='size']:checked");
                             console.log("selectedSize =",selectedSize)
                             if (selectedSize.length > 0) {
-                                
+                                const selectedSizeValue = selectedSize.val();
+                                const items = [{
+                                    variant_id: selectedSizeValue,
+                                    quantity: 1
+                                }]
+
+                                console.log("info =>",{
+                                    productDetail: productDetail,
+                                    wishlistDetail: wishlistDetail ? wishlistDetail : "",
+                                })
+                                const newWishlistDetail = {
+                                    ...wishlistDetail,
+                                    products: [productDetail], // Replace the products array with a new array containing productDetail
+                                };
+                                //wishlistDetail.products = productDetail
+                                await handleWishlistUpdate(newWishlistDetail, items, true)
+                                /*
                                 const confirm = createConfirm(`Are you sure want to add ${productDetail?.productName} to cart? `);
                                 $('body').append(confirm);
                                 confirm.find("button").off('click')
@@ -2176,7 +2420,8 @@
                                         }        
         
                                     }
-                                })                
+                                })
+                                */
                                 
                             } else {
                                 console.log("No size selected.");
@@ -2296,11 +2541,15 @@
                     confirm.find('button').off('click');
                     confirm.find("button").on('click', async function (event) {
                         const buttonId = event.target.id;
-                        confirm.remove();
-
-                        console.log("buttonId =>",buttonId)
 
                         if (buttonId === 'btn-save') {
+                            const wishlistName = confirm.find("#txtWishlist").val().trim();
+                            if(wishlistName === ""){
+                                confirm.find("#txtWishlist")[0].classList.add("warning");
+                                return;
+                            }
+                            confirm.remove();
+
                             $("#my-wishlist-detail-content").empty();
                             loader = await renderLoader();
                             $("#my-wishlist-detail-content").append(loader);
@@ -2340,6 +2589,8 @@
                                 $("#my-wishlist-modal").remove();
                                 openWishlistList();    
                             }
+                        }else{
+                            confirm.remove();
                         }
                     })
                 }else{
@@ -2359,7 +2610,9 @@
             cAddToCart.off('click')
             cAddToCart.on('click', async (event) => {
 
-                const confirm = createConfirm("Are you sure want to add all item to cart? ");
+                await handleWishlistUpdate(wishlistDetail, [], true)
+    
+                {% comment %} const confirm = createConfirm("Are you sure want to add all item to cart? ");
                 $('body').append(confirm);
                 confirm.find("button").on('click', async function (event) {
                     const buttonId = event.target.id;
@@ -2386,7 +2639,7 @@
                         }
 
                     }
-                })
+                }) {% endcomment %}
             })
         };
         
@@ -2432,9 +2685,36 @@
                 confirm.remove();
             });
 
+            confirm.find('.copy-link').on('click', function () {
+                copyLink(`${store}/pages/share-wishlist?id=${wishlistId}`)
+                let notification = document.getElementById("copyLinkNotification");
+                notification.style.display = "block";
+
+                setTimeout(function() {
+                    notification.style.display = "none";
+                }, 1500);
+            });
+
+            {% comment %} confirm.find('.share-facebook').on('click', function () {
+                window.location.href = `https://www.facebook.com/sharer/sharer.php?u=${store}/pages/share-wishlist?${wishlistId}`
+            }); {% endcomment %}
+
+            confirm.find('.share-facebook').on('click', function () {
+                // Create a unique name for the popup window to ensure it opens a new window each time
+                var popupWindowName = 'Share Wishlist Via Facebook';            
+                // Open the Facebook sharing link in a popup window
+                var popupWindow = window.open(`https://www.facebook.com/sharer/sharer.php?u=${store}/pages/share-wishlist?${wishlistId}`, popupWindowName, 'width=600,height=400');                
+            });
+            
+            confirm.find('.share-twitter').on('click', function () {
+                var popupWindowName = 'Share Wishlist Via Twitter';
+                var tweetText = encodeURIComponent("Check out my awesome wishlist on this website!");
+                var popupWindow = window.open(`https://twitter.com/intent/tweet?text=${tweetText}&url=${store}/pages/share-wishlist?${wishlistId})`, popupWindowName, 'width=600,height=400');
+            });
+            
             confirm.find('#btn-share').on('click', async function () {
                 const sender = confirm.find('#txtSenderr').val();
-                const receipent = confirm.find('#txtReceipent').val();
+                const receipent = confirm.find('#txtRecipient').val();
                 const message = confirm.find('#txtMessage').val();
                 const store = getLocalStorage('storeSetting')
                 const storeId = store._id ? store._id : ""
@@ -2452,7 +2732,6 @@
                         userId
                     },        
                 }
-                console.log("obj =>",obj)
 
                 let isTrue = 0;
                 const emailRegex = /^(\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)(,\s*[\w\.-]+@[a-zA-Z\d\.-]+\s*|\s*[\w\.-]+(\+[a-zA-Z\d]+)?@[a-zA-Z\d\.-]+\s*)*$/;
@@ -2465,10 +2744,10 @@
                 }
                 
                 if (obj.receipent === "" || !emailRegex.test(obj.receipent)) {
-                    confirm.find('#txtReceipent')[0].classList.add("warning");
+                    confirm.find('#txtRecipient')[0].classList.add("warning");
                     isTrue++
                 } else {
-                    confirm.find('#txtReceipent')[0].classList.remove("warning");
+                    confirm.find('#txtRecipient')[0].classList.remove("warning");
                 }
 
                 if (obj.message === "") {
@@ -2515,9 +2794,6 @@
                 },3000)
 
             });
-        }
-        function showMyWishlist() {
-            openWishlistList();
         }
     
         // // --- end wislist list --
